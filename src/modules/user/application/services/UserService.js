@@ -1,34 +1,45 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import User from "../../domain/entities/User.js";
+import UserProfile from "../../domain/entities/UserProfile.js";
 
 export default class UserService {
   constructor(userRepo) {
     this.userRepo = userRepo;
   }
 
-  async register(email, password) {
-    const existing = await this.userRepo.findByEmail(email);
-    if (existing) throw new Error("User already exists");
+  async register(data) {
+    const { email, password } = data;
 
-    const hashed = await bcrypt.hash(password, 10);
-    const user = new User.Builder().setEmail(email).setPassword(hashed).build();
-    return this.userRepo.save(user);
-  }
+    // check existing
+    const exists = await this.userRepo.findByEmail(email);
+    if (exists) throw new Error("Email already exists");
 
-  async login(email, password) {
-    const user = await this.userRepo.findByEmail(email);
-    if (!user) throw new Error("Invalid credentials");
+    // hash pass
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) throw new Error("Invalid credentials");
+    // Build USER entity
+    const user = new User.Builder()
+      .setEmail(email)
+      .setPassword(hashedPassword)
+      .setStatus("Active")
+      .build();
 
-    const token = jwt.sign(
-      { id: user.user_id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    // save user
+    const userId = await this.userRepo.createUser(user);
 
-    return { token, user };
+    // Build USER PROFILE entity
+    const profile = new UserProfile.Builder()
+      .setUserId(userId)
+      .setFName(data.f_name)
+      .setMName(data.m_name)
+      .setLName(data.l_name)
+      .setContactNum(data.contact_num)
+      .setAddress(data.address)
+      .setBirthDate(data.birth_date)
+      .build();
+
+    await this.userRepo.createUserProfile(profile);
+
+    return { userId, email };
   }
 }

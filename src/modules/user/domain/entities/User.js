@@ -1,6 +1,6 @@
 export default class User {
   constructor(builder) {
-    this.id = builder.id;
+    this.userId = builder.userId;
     this.email = builder.email;
     this.password = builder.password;
     this.status = builder.status || "Active";
@@ -9,25 +9,35 @@ export default class User {
 
   static get Builder() {
     return class {
-      setId(id) {
-        this.id = id;
+      setUserId(id) {
+        this.userId = id;
         return this;
       }
+
       setEmail(email) {
         this.email = email;
         return this;
       }
+
       setPassword(password) {
         this.password = password;
         return this;
       }
+
       setStatus(status) {
         this.status = status;
         return this;
       }
+
+      setCreatedAt(date) {
+        this.createdAt = date;
+        return this;
+      }
+
       build() {
-        if (!this.email || !this.password)
-          throw new Error("Email and password required");
+        if (!this.email) throw new Error("Email required");
+        if (!this.password) throw new Error("Password required");
+
         return new User(this);
       }
     };

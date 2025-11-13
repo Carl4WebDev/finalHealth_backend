@@ -1,24 +1,20 @@
 import UserRepo from "../../infrastructure/repositories/UserRepo.js";
 import UserService from "../../application/services/UserService.js";
 
-const userService = new UserService(new UserRepo());
+// ⬅️ RIGHT HERE — INSTANTIATE & INJECT
+const userRepo = new UserRepo();
+const userService = new UserService(userRepo);
 
 export const register = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await userService.register(email, password);
-    res.status(201).json({ message: "User registered successfully", user });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-};
+    const result = await userService.register(req.body);
 
-export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const result = await userService.login(email, password);
-    res.json(result);
-  } catch (err) {
-    res.status(401).json({ error: err.message });
+    return res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      user: result,
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
   }
 };
