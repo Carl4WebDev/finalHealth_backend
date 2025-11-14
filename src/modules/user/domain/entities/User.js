@@ -7,28 +7,36 @@ export default class User {
     this.createdAt = builder.createdAt || new Date();
   }
 
+  isActive() {
+    return this.status === "Active";
+  }
+
+  deactivate() {
+    this.status = "Inactive";
+  }
+
+  reactivate() {
+    this.status = "Active";
+  }
+
   static get Builder() {
     return class {
       setUserId(id) {
         this.userId = id;
         return this;
       }
-
       setEmail(email) {
         this.email = email;
         return this;
       }
-
       setPassword(password) {
         this.password = password;
         return this;
       }
-
       setStatus(status) {
         this.status = status;
         return this;
       }
-
       setCreatedAt(date) {
         this.createdAt = date;
         return this;
@@ -37,7 +45,6 @@ export default class User {
       build() {
         if (!this.email) throw new Error("Email required");
         if (!this.password) throw new Error("Password required");
-
         return new User(this);
       }
     };

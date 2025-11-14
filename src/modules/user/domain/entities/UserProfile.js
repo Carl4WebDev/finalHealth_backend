@@ -17,42 +17,34 @@ export default class UserProfile {
         this.profileId = id;
         return this;
       }
-
       setUserId(userId) {
         this.userId = userId;
         return this;
       }
-
       setFName(val) {
         this.f_name = val;
         return this;
       }
-
       setMName(val) {
         this.m_name = val;
         return this;
       }
-
       setLName(val) {
         this.l_name = val;
         return this;
       }
-
       setContactNum(num) {
         this.contact_num = num;
         return this;
       }
-
       setAddress(address) {
         this.address = address;
         return this;
       }
-
       setBirthDate(date) {
         this.birth_date = date;
         return this;
       }
-
       setProfileImg(path) {
         this.profile_img_path = path;
         return this;
