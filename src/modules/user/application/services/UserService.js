@@ -44,25 +44,36 @@ export default class UserService {
 
   async login(email, password) {
     const user = await this.userRepo.findByEmail(email);
+
+    // User not found
     if (!user) {
-      await this.auditRepo.logAuth(null, "FAILED_LOGIN", "User not found");
+      await this.auditRepo.logAuth(
+        null,
+        "USER", // actorType
+        "FAILED_LOGIN", // action
+        `Email not found: ${email}` // details
+      );
       throw new Error("Invalid credentials");
     }
 
+    // Wrong password
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       await this.auditRepo.logAuth(
         user.user_id,
+        "USER",
         "FAILED_LOGIN",
         "Wrong password"
       );
       throw new Error("Invalid credentials");
     }
 
+    // Success – issue token
     const token = this.authTokenService.generateToken(user);
 
     await this.auditRepo.logAuth(
       user.user_id,
+      "USER",
       "LOGIN_SUCCESS",
       "User logged in"
     );

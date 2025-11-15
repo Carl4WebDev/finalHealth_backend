@@ -1,5 +1,5 @@
 export default class IAuditRepository {
-  logAuth(userId, action, details) {
+  logAuth(actorId, actorType, action, details) {
     throw new Error("logAuth must be implemented");
   }
 }

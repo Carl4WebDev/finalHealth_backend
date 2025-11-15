@@ -11,14 +11,6 @@ export default class User {
     return this.status === "Active";
   }
 
-  deactivate() {
-    this.status = "Inactive";
-  }
-
-  reactivate() {
-    this.status = "Active";
-  }
-
   static get Builder() {
     return class {
       setUserId(id) {
