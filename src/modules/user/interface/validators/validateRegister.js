@@ -1,14 +1,23 @@
 export const validateRegister = (req, res, next) => {
-  const { email, password, f_name, contact_num } = req.body;
+  const { email, password, fName, contactNum } = req.body;
 
-  if (!email || !password || !f_name || !contact_num)
-    return res.status(400).json({ error: "Missing required fields" });
+  if (!email || !password || !fName || !contactNum) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Missing required fields" });
+  }
 
-  if (!email.includes("@"))
-    return res.status(400).json({ error: "Invalid email format" });
+  if (!email.includes("@")) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Invalid email format" });
+  }
 
-  if (password.length < 8)
-    return res.status(400).json({ error: "Password too short" });
+  if (password.length < 8) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Password too short" });
+  }
 
   next();
 };

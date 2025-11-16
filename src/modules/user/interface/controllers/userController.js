@@ -3,6 +3,11 @@ import AuditRepo from "../../infrastructure/repositories/AuditRepo.js";
 import AuthTokenService from "../../application/utils/AuthTokenService.js";
 import UserService from "../../application/services/UserService.js";
 
+import RegisterUserDTO from "../http/dtos/RegisterDTO.js";
+import LoginUserDTO from "../http/dtos/LoginUserDTO.js";
+import UserResponseDTO from "../http/dtos/UserResponseDTO.js";
+
+// Wiring dependencies (you can move this to a DI container later)
 const userRepo = new UserRepo();
 const auditRepo = new AuditRepo();
 const authTokenService = new AuthTokenService();
@@ -11,21 +16,24 @@ const userService = new UserService(userRepo, auditRepo, authTokenService);
 
 export const register = async (req, res) => {
   try {
-    const result = await userService.register(req.body);
-    res.status(201).json({ success: true, user: result });
+    const dto = new RegisterUserDTO(req.body);
+    const user = await userService.register(dto);
+    const userResponse = new UserResponseDTO(user);
+
+    res.status(201).json({ success: true, user: userResponse });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
 export const login = async (req, res) => {
   try {
-    const { token, user } = await userService.login(
-      req.body.email,
-      req.body.password
-    );
-    res.status(200).json({ success: true, token, user });
+    const dto = new LoginUserDTO(req.body);
+    const { token, user } = await userService.login(dto);
+    const userResponse = new UserResponseDTO(user);
+
+    res.status(200).json({ success: true, token, user: userResponse });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ success: false, error: err.message });
   }
 };

@@ -1,6 +1,6 @@
-export default class User {
+export default class Admin {
   constructor(builder) {
-    this.userId = builder.userId;
+    this.adminId = builder.adminId;
     this.email = builder.email;
     this.password = builder.password;
     this.status = builder.status || "Active";
@@ -13,8 +13,8 @@ export default class User {
 
   static get Builder() {
     return class {
-      setUserId(id) {
-        this.userId = id;
+      setAdminId(id) {
+        this.adminId = id;
         return this;
       }
 
@@ -41,7 +41,8 @@ export default class User {
       build() {
         if (!this.email) throw new Error("Email required");
         if (!this.password) throw new Error("Password required");
-        return new User(this);
+
+        return new Admin(this);
       }
     };
   }

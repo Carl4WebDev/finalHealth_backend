@@ -2,13 +2,13 @@ export default class UserProfile {
   constructor(builder) {
     this.profileId = builder.profileId;
     this.userId = builder.userId;
-    this.f_name = builder.f_name;
-    this.m_name = builder.m_name;
-    this.l_name = builder.l_name;
-    this.contact_num = builder.contact_num;
+    this.fName = builder.fName;
+    this.mName = builder.mName;
+    this.lName = builder.lName;
+    this.contactNum = builder.contactNum;
     this.address = builder.address;
-    this.birth_date = builder.birth_date;
-    this.profile_img_path = builder.profile_img_path || null;
+    this.birthDate = builder.birthDate;
+    this.profileImgPath = builder.profileImgPath || null;
   }
 
   static get Builder() {
@@ -17,42 +17,50 @@ export default class UserProfile {
         this.profileId = id;
         return this;
       }
+
       setUserId(userId) {
         this.userId = userId;
         return this;
       }
+
       setFName(val) {
-        this.f_name = val;
+        this.fName = val;
         return this;
       }
+
       setMName(val) {
-        this.m_name = val;
+        this.mName = val;
         return this;
       }
+
       setLName(val) {
-        this.l_name = val;
+        this.lName = val;
         return this;
       }
+
       setContactNum(num) {
-        this.contact_num = num;
+        this.contactNum = num;
         return this;
       }
+
       setAddress(address) {
         this.address = address;
         return this;
       }
+
       setBirthDate(date) {
-        this.birth_date = date;
+        this.birthDate = date;
         return this;
       }
+
       setProfileImg(path) {
-        this.profile_img_path = path;
+        this.profileImgPath = path;
         return this;
       }
 
       build() {
         if (!this.userId) throw new Error("userId required");
-        if (!this.contact_num) throw new Error("contact_num required");
+        if (!this.contactNum) throw new Error("contactNum required");
         return new UserProfile(this);
       }
     };
