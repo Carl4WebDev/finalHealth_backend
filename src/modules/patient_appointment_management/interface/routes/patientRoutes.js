@@ -1,0 +1,19 @@
+import express from "express";
+import {
+  registerPatient,
+  getPatientById,
+  searchPatients,
+} from "../controllers/PatientController.js";
+
+const router = express.Router();
+
+// working — Registers a new patient and returns the created patient entity
+router.post("/", registerPatient);
+
+// working — Retrieves a single patient by ID (returns the patient or 404 if not found)
+router.get("/:id", getPatientById);
+
+// working — Searches patients by name, email, or contact number (returns a list)
+router.get("/", searchPatients);
+
+export default router;
