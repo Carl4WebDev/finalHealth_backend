@@ -4,7 +4,6 @@ import PatientService from "../../application/services/PatientService.js";
 
 import RegisterPatientDTO from "../http/RegisterPatientDTO.js";
 
-// Dependency Injection — same pattern you use in ClinicController
 const patientRepo = new PatientRepo();
 const factory = new AppointmentFactory();
 const patientService = new PatientService(patientRepo, factory);
