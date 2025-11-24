@@ -1,5 +1,5 @@
 import ICertificateRepository from "../domain/repositories/ICertificateRepository.js";
-import Certificate from "../domain/entities/certificates.js";
+import Certificate from "../domain/entities/Certificates.js";
 import db from "../../../core/database/db.js";
 
 export default class CertificateRepo extends ICertificateRepository {
