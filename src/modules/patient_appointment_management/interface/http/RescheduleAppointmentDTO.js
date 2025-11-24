@@ -3,6 +3,6 @@ export default class RescheduleAppointmentDTO {
     this.appointmentId = Number(params.id);
     this.appointmentDate = body.appointmentDate;
     this.appointmentType = body.appointmentType;
-    this.priorityId = Number(body.priorityId);
+    this.priorityId = body.priorityId ? Number(body.priorityId) : null;
   }
 }

@@ -1,9 +1,9 @@
 export default class Priority {
   constructor(builder) {
     this.priorityId = builder.priorityId;
-    this.priorityName = builder.priorityName; // Emergency, PWD, Follow-up, Normal
+    this.priorityLevel = builder.priorityLevel;
     this.description = builder.description;
-    this.priorityRank = builder.priorityRank; // 1 = highest
+    this.priorityRank = builder.priorityRank;
   }
 
   static get Builder() {
@@ -12,10 +12,10 @@ export default class Priority {
         this.priorityId = v;
         return this;
       }
-      setPriorityName(v) {
-        this.priorityName = v;
+      setPriorityLevel(v) {
+        this.priorityLevel = v;
         return this;
-      }
+      } // FIXED
       setDescription(v) {
         this.description = v;
         return this;
@@ -26,8 +26,9 @@ export default class Priority {
       }
 
       build() {
-        if (!this.priorityName) throw new Error("priorityName required");
+        if (!this.priorityLevel) throw new Error("priorityLevel required");
         if (this.priorityRank == null) throw new Error("priorityRank required");
+
         return new Priority(this);
       }
     };

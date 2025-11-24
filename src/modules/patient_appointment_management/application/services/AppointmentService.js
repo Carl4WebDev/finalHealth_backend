@@ -44,8 +44,6 @@ export default class AppointmentService {
     const updated = existing
       .toBuilder()
       .setAppointmentDate(dto.appointmentDate)
-      .setStartTime(dto.startTime)
-      .setEndTime(dto.endTime)
       .setAppointmentType(dto.appointmentType ?? existing.appointmentType)
       .setPriorityId(dto.priorityId ?? existing.priorityId)
       .build();
@@ -79,5 +77,9 @@ export default class AppointmentService {
 
   async listAppointmentsByPatient(patientId) {
     return await this.appointmentRepo.findByPatient(patientId);
+  }
+
+  async getAppointmentById(id) {
+    return await this.appointmentRepo.findById(id);
   }
 }

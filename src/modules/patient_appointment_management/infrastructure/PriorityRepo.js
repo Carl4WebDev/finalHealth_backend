@@ -1,5 +1,5 @@
-import IPriorityRepository from "../../domain/repositories/IPriorityRepository.js";
-import Priority from "../../domain/entities/Priority.js";
+import IPriorityRepository from "../domain/repositories/IPriorityRepository.js";
+import Priority from "../domain/entities/Priority.js";
 import db from "../../../core/database/db.js";
 
 export default class PriorityRepo extends IPriorityRepository {

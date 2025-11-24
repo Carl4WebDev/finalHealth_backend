@@ -26,6 +26,9 @@ app.use("/api/doctor-session-routes", doctorSessionRoutes);
 import patientRoutes from "./src/modules/patient_appointment_management/interface/routes/patientRoutes.js";
 app.use("/api/patient-routes", patientRoutes);
 
+import appointmentRoutes from "./src/modules/patient_appointment_management/interface/routes/appointmentRoutes.js";
+app.use("/api/appointment-routes", appointmentRoutes);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
   console.log(`🚀 FinalHealth backend running on port ${PORT}`)

@@ -1,11 +1,11 @@
-import AppointmentRepo from "../../infrastructure/repositories/AppointmentRepo.js";
-import PatientRepo from "../../infrastructure/repositories/PatientRepo.js";
-import PriorityRepo from "../../infrastructure/repositories/PriorityRepo.js";
+import AppointmentRepo from "../../infrastructure/AppointmentRepo.js";
+import PatientRepo from "../../infrastructure/PatientRepo.js";
+import PriorityRepo from "../../infrastructure/PriorityRepo.js";
 import AppointmentFactory from "../../domain/factories/AppointmentFactory.js";
 import AppointmentService from "../../application/services/AppointmentService.js";
 
-import CreateAppointmentDTO from "../http/dtos/CreateAppointmentDTO.js";
-import RescheduleAppointmentDTO from "../http/dtos/RescheduleAppointmentDTO.js";
+import CreateAppointmentDTO from "../http/CreateAppointmentDTO.js";
+import RescheduleAppointmentDTO from "../http/RescheduleAppointmentDTO.js";
 
 // Dependency Injection — following exact pattern from ClinicController
 const appointmentRepo = new AppointmentRepo();
@@ -111,6 +111,26 @@ export const listAppointmentsByPatient = async (req, res) => {
     );
 
     res.status(200).json({ success: true, appointments });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
+// =============================
+// GET APPOINTMENT BY ID
+// =============================
+export const getAppointmentById = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const appointment = await appointmentService.getAppointmentById(id);
+
+    if (!appointment) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Appointment not found" });
+    }
+
+    res.status(200).json({ success: true, appointment });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }

@@ -1,14 +1,13 @@
-import IAppointmentRepository from "../../domain/repositories/IAppointmentRepository.js";
-import Appointment from "../../domain/entities/Appointment.js";
+import IAppointmentRepository from "../domain/repositories/IAppointmentRepository.js";
+import Appointment from "../domain/entities/Appointment.js";
 import db from "../../../core/database/db.js";
 
 export default class AppointmentRepo extends IAppointmentRepository {
   async save(appointment) {
     const query = `
       INSERT INTO appointments
-      (patient_id, doctor_id, clinic_id, appointment_date,
-       start_time, end_time, appointment_type, priority_id, status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      (patient_id, doctor_id, clinic_id, appointment_date, appointment_type, priority_id, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7)
       RETURNING *;
     `;
 
@@ -17,8 +16,6 @@ export default class AppointmentRepo extends IAppointmentRepository {
       appointment.doctorId,
       appointment.clinicId,
       appointment.appointmentDate,
-      appointment.startTime,
-      appointment.endTime,
       appointment.appointmentType,
       appointment.priorityId,
       appointment.status,
@@ -41,7 +38,7 @@ export default class AppointmentRepo extends IAppointmentRepository {
     const result = await db.query(
       `SELECT * FROM appointments 
        WHERE patient_id=$1
-       ORDER BY appointment_date DESC, start_time DESC`,
+       ORDER BY appointment_date DESC`,
       [patientId]
     );
     return result.rows.map((r) => this._toEntity(r));
@@ -52,7 +49,7 @@ export default class AppointmentRepo extends IAppointmentRepository {
       `SELECT * FROM appointments
        WHERE clinic_id=$1
          AND appointment_date BETWEEN $2 AND $3
-       ORDER BY appointment_date, start_time`,
+       ORDER BY appointment_date`,
       [clinicId, fromDate, toDate]
     );
     return result.rows.map((r) => this._toEntity(r));
@@ -62,19 +59,15 @@ export default class AppointmentRepo extends IAppointmentRepository {
     const query = `
       UPDATE appointments
       SET appointment_date=$1,
-          start_time=$2,
-          end_time=$3,
-          appointment_type=$4,
-          priority_id=$5,
-          status=$6
-      WHERE appointment_id=$7
+          appointment_type=$2,
+          priority_id=$3,
+          status=$4
+      WHERE appointment_id=$5
       RETURNING *;
     `;
 
     const values = [
       appointment.appointmentDate,
-      appointment.startTime,
-      appointment.endTime,
       appointment.appointmentType,
       appointment.priorityId,
       appointment.status,
@@ -116,8 +109,6 @@ export default class AppointmentRepo extends IAppointmentRepository {
       .setDoctorId(row.doctor_id)
       .setClinicId(row.clinic_id)
       .setAppointmentDate(row.appointment_date)
-      .setStartTime(row.start_time)
-      .setEndTime(row.end_time)
       .setAppointmentType(row.appointment_type)
       .setPriorityId(row.priority_id)
       .setStatus(row.status)
