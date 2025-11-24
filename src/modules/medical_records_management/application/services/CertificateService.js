@@ -1,4 +1,4 @@
-import Certificate from "../../domain/entities/certificates.js";
+import Certificate from "../../domain/entities/Certificates.js";
 
 export default class CertificateService {
   constructor(certRepo) {
