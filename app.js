@@ -73,6 +73,14 @@ app.use("/api/medical-record-routes", medicalRecordRoutes);
 import medicalRecordDocumentRoutes from "./src/modules/medical_records_management/interface/routes/medicalRecordDocumentRoutes.js";
 app.use("/api/medical-record-document-routes", medicalRecordDocumentRoutes);
 
+//subsystem 5 "Notification subsystem"
+import notificationRoutes from "./src/modules/notification/interface/routes/notificationRoutes.js";
+app.use("/api/notification-routes", notificationRoutes);
+
+//subsystem 6 "Subscription & Billing Subsystem"
+import subscriptoinRoutes from "./src/modules/subscription_billing/interface/routes/subscriptionRoutes.js";
+app.use("/api/subscription-routes", subscriptoinRoutes);
+
 app.use("/uploads", express.static(path.join("src/core/uploads")));
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
