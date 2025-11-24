@@ -1,8 +1,9 @@
 import MedicalRecord from "../../domain/entities/MedicalRecord.js";
 
 export default class MedicalRecordService {
-  constructor(medicalRecordRepo) {
+  constructor(medicalRecordRepo, auditService) {
     this.medicalRecordRepo = medicalRecordRepo;
+    this.auditService = auditService; // NEW
   }
 
   _computeTotal(consultationFee, medicineFee, labFee, otherFee) {
@@ -13,7 +14,7 @@ export default class MedicalRecordService {
     return c + m + l + o;
   }
 
-  async createMedicalRecord(dto) {
+  async createMedicalRecord(dto, actor) {
     const totalAmount =
       dto.totalAmount !== null && dto.totalAmount !== undefined
         ? dto.totalAmount
@@ -41,14 +42,25 @@ export default class MedicalRecordService {
       .setTotalAmount(totalAmount)
       .build();
 
-    return await this.medicalRecordRepo.save(record);
+    const saved = await this.medicalRecordRepo.save(record);
+
+    // 🔵 AUDIT LOG
+    await this.auditService.record({
+      actorId: actor.id,
+      actorType: actor.role,
+      action: "MEDICAL_RECORD_CREATED",
+      tableAffected: "medical_record",
+      recordId: saved.recordId,
+      details: JSON.stringify(dto),
+    });
+
+    return saved;
   }
 
-  async updateMedicalRecord(dto) {
+  async updateMedicalRecord(dto, actor) {
     const existing = await this.medicalRecordRepo.findById(dto.recordId);
     if (!existing) throw new Error("Medical record not found");
 
-    // Build the updated entity (all numeric fields are force-casted)
     const updated = existing
       .toBuilder()
       .setRecordDate(dto.recordDate ?? existing.recordDate)
@@ -82,7 +94,6 @@ export default class MedicalRecordService {
       )
       .build();
 
-    // Recompute totalAmount or override if provided
     const computedTotal =
       updated.consultationFee +
       updated.medicineFee +
@@ -92,7 +103,19 @@ export default class MedicalRecordService {
     updated.totalAmount =
       dto.totalAmount !== undefined ? Number(dto.totalAmount) : computedTotal;
 
-    return await this.medicalRecordRepo.update(dto.recordId, updated);
+    const saved = await this.medicalRecordRepo.update(dto.recordId, updated);
+
+    // 🔵 AUDIT LOG
+    await this.auditService.record({
+      actorId: actor.id,
+      actorType: actor.role,
+      action: "MEDICAL_RECORD_UPDATED",
+      tableAffected: "medical_record",
+      recordId: dto.recordId,
+      details: JSON.stringify(dto),
+    });
+
+    return saved;
   }
 
   async getById(id) {

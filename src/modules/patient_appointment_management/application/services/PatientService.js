@@ -1,12 +1,25 @@
 export default class PatientService {
-  constructor(patientRepo, factory) {
+  constructor(patientRepo, factory, auditService) {
     this.patientRepo = patientRepo;
     this.factory = factory;
+    this.auditService = auditService; // NEW
   }
 
-  async registerPatient(dto) {
+  async registerPatient(dto, actor) {
     const patient = this.factory.createPatient(dto);
-    return await this.patientRepo.save(patient);
+    const saved = await this.patientRepo.save(patient);
+
+    // AUDIT LOG
+    await this.auditService.record({
+      actorId: actor.id,
+      actorType: actor.role,
+      action: "PATIENT_REGISTERED",
+      tableAffected: "patient",
+      recordId: saved.patientId,
+      details: JSON.stringify(dto),
+    });
+
+    return saved;
   }
 
   async getPatientById(id) {
@@ -17,7 +30,7 @@ export default class PatientService {
     return await this.patientRepo.findBySearch(term);
   }
 
-  async updatePatient(dto) {
+  async updatePatient(dto, actor) {
     const existing = await this.patientRepo.findById(dto.patientId);
     if (!existing) throw new Error("Patient not found");
 
@@ -35,6 +48,18 @@ export default class PatientService {
       .setPatientTypeId(dto.patientTypeId ?? existing.patientTypeId)
       .build();
 
-    return await this.patientRepo.update(updated);
+    const saved = await this.patientRepo.update(updated);
+
+    // AUDIT LOG
+    await this.auditService.record({
+      actorId: actor.id,
+      actorType: actor.role,
+      action: "PATIENT_UPDATED",
+      tableAffected: "patient",
+      recordId: dto.patientId,
+      details: JSON.stringify(dto),
+    });
+
+    return saved;
   }
 }

@@ -4,9 +4,17 @@ import PatientService from "../../application/services/PatientService.js";
 
 import RegisterPatientDTO from "../http/RegisterPatientDTO.js";
 
+// AUDIT
+import AuditRepo from "../../../user/infrastructure/repositories/AuditRepo.js";
+import AuditLogService from "../../../user/application/services/AuditLogService.js";
+
 const patientRepo = new PatientRepo();
 const factory = new AppointmentFactory();
-const patientService = new PatientService(patientRepo, factory);
+
+const auditRepo = new AuditRepo();
+const auditService = new AuditLogService(auditRepo);
+
+const patientService = new PatientService(patientRepo, factory, auditService);
 
 // =============================
 // REGISTER PATIENT
@@ -14,7 +22,9 @@ const patientService = new PatientService(patientRepo, factory);
 export const registerPatient = async (req, res) => {
   try {
     const dto = new RegisterPatientDTO(req.body);
-    const patient = await patientService.registerPatient(dto);
+
+    const patient = await patientService.registerPatient(dto, req.user);
+
     res.status(201).json({ success: true, patient });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
@@ -30,9 +40,10 @@ export const getPatientById = async (req, res) => {
     const patient = await patientService.getPatientById(patientId);
 
     if (!patient) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Patient not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Patient not found",
+      });
     }
 
     res.status(200).json({ success: true, patient });

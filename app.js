@@ -31,6 +31,9 @@ uploadDirs.forEach((dir) => {
 import userRoutes from "./src/modules/user/interface/routes.js";
 app.use("/api/users", userRoutes);
 
+import auditRoutes from "./src/modules/user/interface/auditRoutes.js";
+app.use("/api/audit", auditRoutes);
+
 //subsystem 2 "Clinic & Doctor Management"
 import clinicRoutes from "./src/modules/clinic_management/interface/routes/clinicRoutes.js";
 app.use("/api/clinic-routes", clinicRoutes);

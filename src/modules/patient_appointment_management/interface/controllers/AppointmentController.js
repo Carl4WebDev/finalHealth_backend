@@ -7,17 +7,27 @@ import AppointmentService from "../../application/services/AppointmentService.js
 import CreateAppointmentDTO from "../http/CreateAppointmentDTO.js";
 import RescheduleAppointmentDTO from "../http/RescheduleAppointmentDTO.js";
 
-// Dependency Injection — following exact pattern from ClinicController
+// 🔵 AUDIT IMPORTS — ONLY ADDITION
+import AuditRepo from "../../../user/infrastructure/repositories/AuditRepo.js";
+import AuditLogService from "../../../user/application/services/AuditLogService.js";
+
+// Dependency Injection — original
 const appointmentRepo = new AppointmentRepo();
 const patientRepo = new PatientRepo();
 const priorityRepo = new PriorityRepo();
 const factory = new AppointmentFactory();
 
+// 🔵 AUDIT INJECTION — ONLY ADDITION
+const auditRepo = new AuditRepo();
+const auditService = new AuditLogService(auditRepo);
+
+// 🔵 inject auditService into AppointmentService — ONLY CHANGE
 const appointmentService = new AppointmentService(
   appointmentRepo,
   patientRepo,
   priorityRepo,
-  factory
+  factory,
+  auditService
 );
 
 // =============================
@@ -26,7 +36,13 @@ const appointmentService = new AppointmentService(
 export const createAppointment = async (req, res) => {
   try {
     const dto = new CreateAppointmentDTO(req.body);
-    const appointment = await appointmentService.createAppointment(dto);
+
+    // 🔵 ONLY CHANGE: pass actor
+    const appointment = await appointmentService.createAppointment(
+      dto,
+      req.user
+    );
+
     res.status(201).json({ success: true, appointment });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
@@ -39,7 +55,13 @@ export const createAppointment = async (req, res) => {
 export const rescheduleAppointment = async (req, res) => {
   try {
     const dto = new RescheduleAppointmentDTO(req.body, req.params);
-    const appointment = await appointmentService.rescheduleAppointment(dto);
+
+    // 🔵 ONLY CHANGE: pass actor
+    const appointment = await appointmentService.rescheduleAppointment(
+      dto,
+      req.user
+    );
+
     res.status(200).json({ success: true, appointment });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
@@ -53,9 +75,12 @@ export const cancelAppointment = async (req, res) => {
   try {
     const appointmentId = Number(req.params.id);
     const { reason } = req.body;
+
+    // 🔵 ONLY CHANGE: pass actor
     const appointment = await appointmentService.cancelAppointment(
       appointmentId,
-      reason
+      reason,
+      req.user
     );
 
     res.status(200).json({ success: true, appointment });
@@ -65,14 +90,18 @@ export const cancelAppointment = async (req, res) => {
 };
 
 // =============================
-// COMPLETE APPOINTMENT
+// COMPLETE
 // =============================
 export const completeAppointment = async (req, res) => {
   try {
     const appointmentId = Number(req.params.id);
+
+    // 🔵 ONLY CHANGE: pass actor
     const appointment = await appointmentService.completeAppointment(
-      appointmentId
+      appointmentId,
+      req.user
     );
+
     res.status(200).json({ success: true, appointment });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
@@ -106,6 +135,7 @@ export const listAppointmentsByDate = async (req, res) => {
 export const listAppointmentsByPatient = async (req, res) => {
   try {
     const patientId = Number(req.params.patientId);
+
     const appointments = await appointmentService.listAppointmentsByPatient(
       patientId
     );
