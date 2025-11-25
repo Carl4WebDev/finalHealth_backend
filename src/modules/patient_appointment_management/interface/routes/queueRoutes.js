@@ -5,7 +5,7 @@ import {
   updateQueueStatus,
 } from "../controllers/QueueController.js";
 
-import authMiddleware from "../../../../core/middleware/auth.js";
+import authMiddleware from "../../../../core/middleware/Auth.js";
 
 const router = express.Router();
 router.post("/", authMiddleware, addToQueue);
