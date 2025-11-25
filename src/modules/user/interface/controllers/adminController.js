@@ -1,6 +1,6 @@
 import AdminRepo from "../../infrastructure/repositories/AdminRepo.js";
 import AuditRepo from "../../infrastructure/repositories/AuditRepo.js";
-import AuthTokenService from "../../application/utils/AuthTokenService.js";
+import AuthTokenService from "../../../../core/middleware/AuthTokenService.js";
 import AdminService from "../../application/services/AdminService.js";
 
 import RegisterAdminDTO from "../http/dtos/RegisterAdminDTO.js";

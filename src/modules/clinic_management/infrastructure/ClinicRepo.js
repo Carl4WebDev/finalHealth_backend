@@ -76,6 +76,19 @@ export default class ClinicRepo extends IClinicRepository {
     return result.rows.map((row) => this._toEntity(row));
   }
 
+  async findClinicsByDoctor(doctorId) {
+    const query = `
+    SELECT c.*
+    FROM clinics c
+    JOIN doctor_clinics dc ON dc.clinic_id = c.clinic_id
+    WHERE dc.doctor_id = $1
+    ORDER BY c.clinic_name ASC
+  `;
+
+    const result = await db.query(query, [doctorId]);
+    return result.rows;
+  }
+
   /* ============================
      PRIVATE: MAP DB → ENTITY
   ============================ */

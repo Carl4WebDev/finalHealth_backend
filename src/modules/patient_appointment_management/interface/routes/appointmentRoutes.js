@@ -7,30 +7,34 @@ import {
   listAppointmentsByDate,
   listAppointmentsByPatient,
   getAppointmentById,
+  listAllAppointmentsForDoctor,
+  listTodayAppointments,
 } from "../controllers/AppointmentController.js";
+
+// Importing authMiddleware
+import authMiddleware from "../../../../core/middleware/Auth.js"; // Correct path to the middleware
 
 const router = express.Router();
 
-//working get single appointment — returns one appointment by ID or 404 if not found
-router.get("/:id", getAppointmentById);
+// Public routes
+router.get("/doctor/:doctorId/clinic/:clinicId/today", listTodayAppointments); // No authentication needed for this one
+router.get("/:id", getAppointmentById); // Public route, doesn't need auth
+router.get("/", listAppointmentsByDate); // Public route, doesn't need auth
 
-//working list by date range — returns all appointments for a clinic filtered by from/to dates
-// clinicId=1&fromDate=2025-01-01&toDate=2025-12-31
-router.get("/", listAppointmentsByDate);
+// Protected routes (authentication required)
+router.post("/", authMiddleware, createAppointment); // Create new appointment (requires auth)
+router.put("/:id/reschedule", authMiddleware, rescheduleAppointment); // Reschedule appointment (requires auth)
+router.put("/:id/cancel", authMiddleware, cancelAppointment); // Cancel appointment (requires auth)
+router.put("/:id/complete", authMiddleware, completeAppointment); // Complete appointment (requires auth)
 
-//working create appointment — returns the newly created appointment object
-router.post("/", createAppointment);
+// List appointments by patient — returns all appointments belonging to a specific patient (protected)
+router.get("/patient/:patientId", authMiddleware, listAppointmentsByPatient);
 
-//working reschedule appointment — returns the updated appointment with new date/type/priority
-router.put("/:id/reschedule", rescheduleAppointment);
-
-//working cancel appointment — returns the cancelled appointment including the cancel reason
-router.put("/:id/cancel", cancelAppointment);
-
-//working complete appointment — returns the appointment with status updated to "Completed"
-router.put("/:id/complete", completeAppointment);
-
-//working list patient appointments — returns all appointments belonging to a specific patient
-router.get("/patient/:patientId", listAppointmentsByPatient);
+// Fetch ALL appointments for a doctor IN a specific clinic (protected)
+router.get(
+  "/doctor/:doctorId/clinic/:clinicId",
+  authMiddleware,
+  listAllAppointmentsForDoctor
+);
 
 export default router;

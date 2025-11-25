@@ -74,12 +74,10 @@ export const rescheduleAppointment = async (req, res) => {
 export const cancelAppointment = async (req, res) => {
   try {
     const appointmentId = Number(req.params.id);
-    const { reason } = req.body;
 
     // 🔵 ONLY CHANGE: pass actor
     const appointment = await appointmentService.cancelAppointment(
       appointmentId,
-      reason,
       req.user
     );
 
@@ -161,6 +159,39 @@ export const getAppointmentById = async (req, res) => {
     }
 
     res.status(200).json({ success: true, appointment });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
+export const listAllAppointmentsForDoctor = async (req, res) => {
+  try {
+    const doctorId = Number(req.params.doctorId);
+    const clinicId = Number(req.params.clinicId);
+
+    const appointments =
+      await appointmentService.listAllAppointmentsByDoctorAndClinic(
+        doctorId,
+        clinicId
+      );
+
+    res.status(200).json({ success: true, appointments });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
+export const listTodayAppointments = async (req, res) => {
+  try {
+    const doctorId = Number(req.params.doctorId);
+    const clinicId = Number(req.params.clinicId);
+
+    const appointments = await appointmentService.listTodayAppointments(
+      doctorId,
+      clinicId
+    );
+
+    res.status(200).json({ success: true, appointments });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }

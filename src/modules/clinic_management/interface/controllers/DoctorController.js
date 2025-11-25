@@ -74,3 +74,33 @@ export const assignDoctorToClinic = async (req, res) => {
     res.status(400).json({ success: false, error: err.message });
   }
 };
+
+export const getDoctors = async (req, res) => {
+  try {
+    const clinicId = req.query.clinic_id ? Number(req.query.clinic_id) : null;
+
+    const doctors = await doctorService.getDoctors(clinicId);
+
+    res.status(200).json({ success: true, doctors });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
+export const getClinicsOfDoctor = async (req, res) => {
+  try {
+    const doctorId = Number(req.params.doctorId);
+
+    const clinics = await doctorService.getClinicsOfDoctor(doctorId);
+
+    res.status(200).json({
+      success: true,
+      clinics,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};

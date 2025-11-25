@@ -65,6 +65,36 @@ export default class DoctorRepo extends IDoctorRepository {
     return result.rows[0]; // no entity needed for junction table
   }
 
+  async findAll() {
+    const result = await db.query(`SELECT * FROM doctors ORDER BY l_name ASC`);
+    return result.rows.map((row) => this._toEntity(row));
+  }
+
+  async findByClinic(clinicId) {
+    const query = `
+    SELECT d.*
+    FROM doctors d
+    JOIN doctor_clinics dc ON dc.doctor_id = d.doctor_id
+    WHERE dc.clinic_id = $1
+    ORDER BY d.l_name ASC
+  `;
+
+    const result = await db.query(query, [clinicId]);
+    return result.rows.map((row) => this._toEntity(row));
+  }
+  async findClinicsByDoctor(doctorId) {
+    const query = `
+    SELECT c.*
+    FROM clinics c
+    JOIN doctor_clinics dc ON dc.clinic_id = c.clinic_id
+    WHERE dc.doctor_id = $1
+    ORDER BY c.clinic_name ASC
+  `;
+
+    const result = await db.query(query, [doctorId]);
+    return result.rows; // clinics don’t need entity mapping (your pattern)
+  }
+
   /* PRIVATE: Map DB → Entity safely */
   _toEntity(row) {
     return new Doctor.Builder()

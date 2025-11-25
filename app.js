@@ -44,6 +44,9 @@ app.use("/api/doctor-routes", doctorRoutes);
 import doctorSessionRoutes from "./src/modules/clinic_management/interface/routes/doctorSessionRoutes.js";
 app.use("/api/doctor-session-routes", doctorSessionRoutes);
 
+import queueRoutes from "./src/modules/patient_appointment_management/interface/routes/queueRoutes.js";
+app.use("/api/queue-routes", queueRoutes);
+
 //subsystem 3 "Patient & Appointment Management"
 import patientRoutes from "./src/modules/patient_appointment_management/interface/routes/patientRoutes.js";
 app.use("/api/patient-routes", patientRoutes);

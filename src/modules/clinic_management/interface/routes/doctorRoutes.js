@@ -4,6 +4,8 @@ import {
   approveDoctor,
   rejectDoctor,
   assignDoctorToClinic,
+  getDoctors,
+  getClinicsOfDoctor,
 } from "../controllers/DoctorController.js";
 
 const router = express.Router();
@@ -16,5 +18,8 @@ router.post("/:id/approve", approveDoctor);
 router.post("/:id/reject", rejectDoctor);
 //working
 router.post("/:id/assign-clinic", assignDoctorToClinic);
+
+router.get("/doctors", getDoctors);
+router.get("/doctors/:doctorId/clinics", getClinicsOfDoctor);
 
 export default router;

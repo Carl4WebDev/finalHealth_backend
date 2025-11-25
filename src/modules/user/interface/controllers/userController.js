@@ -1,6 +1,6 @@
 import UserRepo from "../../infrastructure/repositories/UserRepo.js";
 import AuditRepo from "../../infrastructure/repositories/AuditRepo.js";
-import AuthTokenService from "../../application/utils/AuthTokenService.js";
+import AuthTokenService from "../../../../core/middleware/AuthTokenService.js";
 import UserService from "../../application/services/UserService.js";
 
 import RegisterUserDTO from "../http/dtos/RegisterDTO.js";

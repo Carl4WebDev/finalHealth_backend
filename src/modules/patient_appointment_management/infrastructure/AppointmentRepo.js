@@ -88,6 +88,53 @@ export default class AppointmentRepo extends IAppointmentRepository {
     );
     return this._toEntity(result.rows[0]);
   }
+  async findAllByDoctorAndClinic(doctorId, clinicId) {
+    const query = `
+    SELECT 
+      a.*,
+      p.priority_level,
+      p.priority_rank,
+
+      -- PATIENT
+      pa.f_name AS patient_fname,
+      pa.l_name AS patient_lname,
+      pa.gender AS patient_gender,
+
+      -- CLINIC
+      c.clinic_name,
+
+      -- DOCTOR
+      d.f_name AS doctor_fname,
+      d.l_name AS doctor_lname
+
+    FROM appointments a
+    LEFT JOIN priority_queue p ON p.priority_id = a.priority_id
+    LEFT JOIN patients pa ON pa.patient_id = a.patient_id
+    LEFT JOIN clinics c ON c.clinic_id = a.clinic_id
+    LEFT JOIN doctors d ON d.doctor_id = a.doctor_id
+
+    WHERE a.doctor_id = $1
+      AND a.clinic_id = $2
+      AND a.status NOT IN ('Completed', 'Cancelled')
+
+    ORDER BY a.appointment_date DESC;
+  `;
+
+    const result = await db.query(query, [doctorId, clinicId]);
+
+    return result.rows.map((row) => {
+      const entity = this._toEntity(row);
+      return {
+        ...entity,
+        patientName: `${row.patient_fname} ${row.patient_lname}`,
+        gender: row.patient_gender,
+        clinicName: row.clinic_name,
+        doctorName: `${row.doctor_fname} ${row.doctor_lname}`,
+        priorityLevel: row.priority_level,
+        priorityRank: row.priority_rank,
+      };
+    });
+  }
 
   async checkDoubleBooking(patientId, date) {
     const result = await db.query(
@@ -98,6 +145,58 @@ export default class AppointmentRepo extends IAppointmentRepository {
       [patientId, date]
     );
     return result.rows.map((r) => this._toEntity(r));
+  }
+
+  async findTodayAppointments(doctorId, clinicId) {
+    const query = `
+    SELECT 
+      a.*,
+      p.priority_level,
+      p.priority_rank,
+
+      -- PATIENT
+      pa.f_name AS patient_fname,
+      pa.l_name AS patient_lname,
+      pa.gender AS patient_gender,
+
+      -- CLINIC
+      c.clinic_name,
+
+      -- DOCTOR
+      d.f_name AS doctor_fname,
+      d.l_name AS doctor_lname
+
+    FROM appointments a
+    LEFT JOIN priority_queue p ON p.priority_id = a.priority_id
+    LEFT JOIN patients pa ON pa.patient_id = a.patient_id
+    LEFT JOIN clinics c ON c.clinic_id = a.clinic_id
+    LEFT JOIN doctors d ON d.doctor_id = a.doctor_id
+
+    WHERE a.doctor_id = $1
+      AND a.clinic_id = $2
+      AND DATE(a.appointment_date) = CURRENT_DATE
+      AND a.status NOT IN ('Completed', 'Cancelled')
+
+    ORDER BY a.appointment_date ASC;
+  `;
+
+    const result = await db.query(query, [doctorId, clinicId]);
+
+    return result.rows.map((row) => {
+      const entity = this._toEntity(row);
+      return {
+        ...entity,
+
+        patientName: `${row.patient_fname} ${row.patient_lname}`,
+        gender: row.patient_gender,
+
+        clinicName: row.clinic_name,
+        doctorName: `${row.doctor_fname} ${row.doctor_lname}`,
+
+        priorityLevel: row.priority_level,
+        priorityRank: row.priority_rank,
+      };
+    });
   }
 
   _toEntity(row) {
