@@ -6,6 +6,15 @@ export default class PatientService {
   }
 
   async registerPatient(dto, actor) {
+    // Check if the patient already exists based on email or contact number
+    const existingPatient = await this.patientRepo.findByEmail(dto.email);
+    if (existingPatient) {
+      throw new Error(
+        "A patient with this email or contact number already exists."
+      );
+    }
+
+    // Proceed to create the patient if no existing record is found
     const patient = this.factory.createPatient(dto);
     const saved = await this.patientRepo.save(patient);
 

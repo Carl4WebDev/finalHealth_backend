@@ -50,6 +50,7 @@ export default class QueueRepository extends IQueueRepository {
     LEFT JOIN patients u ON u.patient_id = q.patient_id
     WHERE q.doctor_id = $1 
       AND q.clinic_id = $2
+      AND a.status  NOT IN ('Completed', 'Cancelled')
     ORDER BY p.priority_rank ASC, q.arrival_time ASC;
   `;
 

@@ -77,6 +77,15 @@ export default class PatientRepo extends IPatientRepository {
     return this._toEntity(result.rows[0]);
   }
 
+  // Find patient by email or contact number (prevents duplicate entries)
+  async findByEmail(email) {
+    const query = `
+      SELECT * FROM patients
+      WHERE email = $1;
+    `;
+    const result = await db.query(query, [email]);
+    return result.rows.length > 0 ? this._toEntity(result.rows[0]) : null;
+  }
   _toEntity(row) {
     if (!row) return null;
 

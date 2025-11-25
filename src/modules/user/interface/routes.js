@@ -1,9 +1,15 @@
 import express from "express";
 
 // USER CONTROLLERS
-import { register, login } from "./controllers/userController.js";
+import {
+  register,
+  login,
+  updateUserProfile,
+  getUserPersonalInfo,
+} from "./controllers/userController.js";
 import { validateRegister } from "./validators/validateRegister.js";
 import { validateAdminRegister } from "./validators/validateAdminRegister.js";
+import { validateProfile } from "./validators/validateProfile.js";
 
 // ADMIN CONTROLLERS
 import {
@@ -20,6 +26,8 @@ const router = express.Router();
  */
 router.post("/register", validateRegister, register);
 router.post("/login", login);
+router.put("/:userId/profile", validateProfile, updateUserProfile);
+router.get("/:userId/personal-info", getUserPersonalInfo);
 
 /**
  * ===========================

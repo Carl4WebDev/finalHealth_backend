@@ -106,4 +106,53 @@ export default class UserService {
 
     return { token, user };
   }
+
+  async updateProfile(
+    userId,
+    { fName, mName, lName, contactNum, address, birthDate }
+  ) {
+    // Find the user profile in the database
+    const userProfile = await this.userRepo.findByUserId(userId);
+
+    if (!userProfile) {
+      throw new Error("User profile not found.");
+    }
+
+    // Update the profile details
+    const updatedProfile = await this.userRepo.updateProfile(userId, {
+      fName,
+      mName,
+      lName,
+      contactNum,
+      address,
+      birthDate,
+    });
+
+    return updatedProfile;
+  }
+
+  // Method to get user and profile info by userId
+  async getUserPersonalInfo(userId) {
+    const { user, userProfile } = await this.userRepo.findByUserId(userId); // Fetch from repo
+    if (!user || !userProfile) {
+      throw new Error("User or profile not found");
+    }
+    return {
+      user: {
+        userId: user.userId,
+        email: user.email,
+        status: user.status,
+        createdAt: user.createdAt,
+      },
+      profile: {
+        firstName: userProfile.fName,
+        middleName: userProfile.mName,
+        lastName: userProfile.lName,
+        contactNumber: userProfile.contactNum,
+        address: userProfile.address,
+        birthDate: userProfile.birthDate,
+        profileImagePath: userProfile.profileImgPath,
+      },
+    };
+  }
 }

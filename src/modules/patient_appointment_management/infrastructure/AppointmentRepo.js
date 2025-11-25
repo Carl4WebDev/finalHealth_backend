@@ -116,7 +116,7 @@ export default class AppointmentRepo extends IAppointmentRepository {
     WHERE a.doctor_id = $1
       AND a.clinic_id = $2
       AND a.status NOT IN ('Completed', 'Cancelled')
-
+      AND a.appointment_date >= CURRENT_DATE  -- Filter out past appointments
     ORDER BY a.appointment_date DESC;
   `;
 
