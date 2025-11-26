@@ -7,7 +7,7 @@ const auditService = new AuditLogService(auditRepo);
 // REQ042 – user sees own logs
 export const getMyLogs = async (req, res) => {
   try {
-    const userId = req.user.userId || req.user.adminId;
+    const userId = req.user.id;
     const logs = await auditService.getMyLogs(userId);
     res.status(200).json({ success: true, logs });
   } catch (err) {

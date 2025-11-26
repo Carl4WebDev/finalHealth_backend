@@ -101,7 +101,8 @@ export default class UserService {
       user.userId,
       "USER",
       "LOGIN_SUCCESS",
-      "User logged in"
+      "User logged in",
+      user.userId
     );
 
     return { token, user };

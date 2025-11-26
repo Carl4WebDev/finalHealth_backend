@@ -10,6 +10,8 @@ import {
 
 const router = express.Router();
 
+
+
 //working
 router.post("/", registerDoctor);
 //working

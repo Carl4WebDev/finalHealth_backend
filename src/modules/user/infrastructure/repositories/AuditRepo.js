@@ -4,14 +4,17 @@ import AuditLogEntry from "../../domain/entities/AuditLogEntry.js";
 
 export default class AuditRepo extends IAuditRepository {
   // Backward compatibility (used by UserService & AdminService)
-  async logAuth(actorId, actorType, action, details) {
+  async logAuth(actorId, actorType, action, details, recordID) {
+    const tableAffected =
+      actorType === "USER" ? "users" : actorType === "ADMIN" ? "admins" : null;
+
     const entry = new AuditLogEntry(
       actorId,
       actorType,
       action,
       details,
-      "auth", // tableAffected added for subsystem 7 compliance
-      null
+      tableAffected,
+      recordID || null
     );
 
     return this.logAction(entry);
