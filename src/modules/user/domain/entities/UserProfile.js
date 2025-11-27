@@ -11,6 +11,19 @@ export default class UserProfile {
     this.profileImgPath = builder.profileImgPath || null;
   }
 
+  toBuilder() {
+    return new UserProfile.Builder()
+      .setProfileId(this.profileId)
+      .setUserId(this.userId)
+      .setFName(this.fName)
+      .setMName(this.mName)
+      .setLName(this.lName)
+      .setContactNum(this.contactNum)
+      .setAddress(this.address)
+      .setBirthDate(this.birthDate)
+      .setProfileImg(this.profileImgPath);
+  }
+
   static get Builder() {
     return class {
       setProfileId(id) {

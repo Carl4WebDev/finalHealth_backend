@@ -108,52 +108,148 @@ export default class UserService {
     return { token, user };
   }
 
-  async updateProfile(
-    userId,
-    { fName, mName, lName, contactNum, address, birthDate }
-  ) {
-    // Find the user profile in the database
-    const userProfile = await this.userRepo.findByUserId(userId);
+  async updateProfile(userId, dto) {
+    const existing = await this.userRepo.findByUserId(userId);
+    if (!existing) throw new Error("User profile not found");
 
-    if (!userProfile) {
-      throw new Error("User profile not found.");
-    }
+    // Selective update (no null overwrite)
+    const updatedData = {
+      fName: dto.fName ?? existing.fName,
+      mName: dto.mName ?? existing.mName,
+      lName: dto.lName ?? existing.lName,
+      contactNum: dto.contactNum ?? existing.contactNum,
+      address: dto.address ?? existing.address,
+      birthDate: dto.birthDate ?? existing.birthDate,
+    };
 
-    // Update the profile details
-    const updatedProfile = await this.userRepo.updateProfile(userId, {
-      fName,
-      mName,
-      lName,
-      contactNum,
-      address,
-      birthDate,
-    });
-
-    return updatedProfile;
+    const updated = await this.userRepo.updateProfile(userId, updatedData);
+    return updated;
   }
 
   // Method to get user and profile info by userId
   async getUserPersonalInfo(userId) {
-    const { user, userProfile } = await this.userRepo.findByUserId(userId); // Fetch from repo
-    if (!user || !userProfile) {
-      throw new Error("User or profile not found");
+    const { user, userProfile } = await this.userRepo.findByUserId(userId);
+
+    if (!user || !userProfile) throw new Error("User or profile not found");
+
+    // Build User entity
+    const userEntity = new User.Builder()
+      .setUserId(user.userId)
+      .setEmail(user.email)
+      .setPassword(user.password) // Required by builder
+      .setStatus(user.status)
+      .setCreatedAt(user.createdAt)
+      .build();
+
+    // Build UserProfile entity
+    const profileEntity = new UserProfile.Builder()
+      .setProfileId(userProfile.profileId)
+      .setUserId(userProfile.userId)
+      .setFName(userProfile.fName)
+      .setMName(userProfile.mName)
+      .setLName(userProfile.lName)
+      .setContactNum(userProfile.contactNum)
+      .setAddress(userProfile.address)
+      .setBirthDate(userProfile.birthDate)
+      .setProfileImg(userProfile.profileImgPath)
+      .build();
+
+    return { user: userEntity, profile: profileEntity };
+  }
+
+  async changePassword(userId, dto) {
+    const user = await this.userRepo.findByUserId(userId);
+    if (!user) throw new Error("User not found");
+
+    const valid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!valid) throw new Error("Incorrect current password");
+
+    const hashed = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.userRepo.updatePassword(userId, hashed);
+
+    await this.auditRepo.logAuth(
+      userId,
+      "USER",
+      "PASSWORD_CHANGED",
+      "User updated their password",
+      userId
+    );
+
+    return true;
+  }
+
+  async updateProfileImage(userId, newPath) {
+    const profile = await this.userRepo.findByUserId(userId);
+    if (!profile) throw new Error("Profile not found");
+
+    const updated = await this.userRepo.updateProfileImage(userId, newPath);
+
+    await this.auditRepo.logAction({
+      actorId: userId,
+      actorType: "USER",
+      action: "PROFILE_IMAGE_UPDATED",
+      details: `User updated profile image`,
+      recordId: userId,
+    });
+
+    return updated;
+  }
+
+  async updateSettings(userId, dto) {
+    const { currentPassword, newPassword, profileImgPath } = dto;
+
+    const result = await this.userRepo.findByUserId(userId);
+    if (!result || !result.user) throw new Error("User not found");
+
+    const user = result.user;
+    const userProfile = result.userProfile;
+
+    // ============================================================
+    // PASSWORD UPDATE (optional + SAFE)
+    // ============================================================
+    if (currentPassword || newPassword) {
+      // prevent undefined issues
+      if (!currentPassword || !newPassword) {
+        throw new Error("Both current and new password are required");
+      }
+
+      const valid = await bcrypt.compare(currentPassword, user.password);
+      if (!valid) throw new Error("Current password is incorrect");
+
+      const newHash = await bcrypt.hash(newPassword, 10);
+
+      // UPDATE ONLY PASSWORD — nothing else changes
+      await this.userRepo.updatePassword(userId, newHash);
+
+      await this.auditRepo.logAuth(
+        userId,
+        "USER",
+        "CHANGE_PASSWORD",
+        "User changed password"
+      );
     }
-    return {
-      user: {
-        userId: user.userId,
-        email: user.email,
-        status: user.status,
-        createdAt: user.createdAt,
-      },
-      profile: {
-        firstName: userProfile.fName,
-        middleName: userProfile.mName,
-        lastName: userProfile.lName,
-        contactNumber: userProfile.contactNum,
-        address: userProfile.address,
-        birthDate: userProfile.birthDate,
-        profileImagePath: userProfile.profileImgPath,
-      },
-    };
+
+    // ============================================================
+    // PROFILE IMAGE UPDATE (optional + SAFE)
+    // ============================================================
+    if (profileImgPath) {
+      const updatedProfile = userProfile
+        .toBuilder()
+        .setProfileImg(profileImgPath || userProfile.profileImgPath) // SAFE
+        .build();
+
+      await this.userRepo.updateProfileImage(updatedProfile);
+
+      await this.auditRepo.logAction({
+        actorId: userId,
+        actorType: "USER",
+        action: "UPDATE_PROFILE_IMAGE",
+        details: "User updated profile picture",
+        tableAffected: "user_profile",
+      });
+    }
+
+    return { success: true, userId };
   }
 }

@@ -87,7 +87,12 @@ app.use("/api/notification-routes", notificationRoutes);
 import subscriptoinRoutes from "./src/modules/subscription_billing/interface/routes/subscriptionRoutes.js";
 app.use("/api/subscription-routes", subscriptoinRoutes);
 
-app.use("/uploads", express.static(path.join("src/core/uploads")));
+// Serve profile images
+app.use(
+  "/uploads/profile",
+  express.static(path.join(process.cwd(), "uploads/profile"))
+);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
   console.log(`🚀 FinalHealth backend running on port ${PORT}`)

@@ -6,23 +6,50 @@ import UserProfile from "../../domain/entities/UserProfile.js";
 export default class UserRepo extends IUserRepository {
   async findByEmail(email) {
     const query = `
-      SELECT user_id, email, password, status, created_at
-      FROM users
-      WHERE email = $1
-      LIMIT 1
-    `;
+    SELECT 
+      u.user_id,
+      u.email,
+      u.password,
+      u.status,
+      u.created_at,
+
+      up.profile_id,
+      up.f_name,
+      up.m_name,
+      up.l_name,
+      up.contact_num,
+      up.address,
+      up.birth_date,
+      up.profile_img_path
+    FROM users u
+    LEFT JOIN user_profile up ON u.user_id = up.user_id
+    WHERE u.email = $1
+    LIMIT 1
+  `;
+
     const { rows } = await db.query(query, [email]);
-    if (rows.length === 0) return null;
+    if (!rows.length) return null;
 
     const row = rows[0];
 
-    return new User.Builder()
-      .setUserId(row.user_id)
-      .setEmail(row.email)
-      .setPassword(row.password)
-      .setStatus(row.status)
-      .setCreatedAt(row.created_at)
-      .build();
+    // Build core user entity (NO CHANGE)
+    const user = this._toUserEntity(row);
+
+    // Attach lightweight profile data directly — NOT as a new entity
+    user.firstName = row.f_name || null;
+    user.middleName = row.m_name || null;
+    user.lastName = row.l_name || null;
+    user.contactNumber = row.contact_num || null;
+    user.address = row.address || null;
+    user.birthDate = row.birth_date || null;
+
+    // Build image URL safely
+    const base = process.env.API_BASE_URL || "http://localhost:5000";
+    user.profileImgUrl = row.profile_img_path
+      ? `${base}/uploads/profile/${row.profile_img_path}`
+      : null;
+
+    return user; // RETURN SAME TYPE AS BEFORE
   }
 
   async createUser(user) {
@@ -93,31 +120,89 @@ export default class UserRepo extends IUserRepository {
 
   async findByUserId(userId) {
     const query = `
-      SELECT u.user_id, u.email, u.password, u.status, u.created_at,
-             up.f_name, up.m_name, up.l_name, up.contact_num, up.address, up.birth_date, up.profile_img_path
-      FROM users u
-      JOIN user_profile up ON u.user_id = up.user_id
-      WHERE u.user_id = $1
-      LIMIT 1
-    `;
+    SELECT 
+      u.user_id,       
+      u.email,      
+      u.password,      
+      u.status,        
+      u.created_at,    
+
+      up.profile_id   AS profile_id,
+      up.user_id      AS profile_user_id,
+      up.f_name,
+      up.m_name,
+      up.l_name,
+      up.contact_num,
+      up.address,
+      up.birth_date,
+      up.profile_img_path
+    FROM users u
+    JOIN user_profile up ON u.user_id = up.user_id
+    WHERE u.user_id = $1
+    LIMIT 1;
+  `;
 
     const { rows } = await db.query(query, [userId]);
-
-    if (rows.length === 0) return null;
+    if (!rows.length) return null;
 
     const row = rows[0];
 
-    // Build and return the full User and UserProfile data
-    const user = new User.Builder()
+    return {
+      user: this._toUserEntity(row),
+      userProfile: this._toProfileEntity(row),
+    };
+  }
+
+  async updatePassword(userId, hashedPassword) {
+    await db.query(`UPDATE users SET password=$1 WHERE user_id=$2`, [
+      hashedPassword,
+      userId,
+    ]);
+  }
+  async updateProfileImage(userId, filePath) {
+    const query = `
+      UPDATE user_profile
+      SET profile_img_path=$1
+      WHERE user_id=$2
+      RETURNING *
+    `;
+
+    const { rows } = await db.query(query, [filePath, userId]);
+    return this._toProfileEntity(rows[0]);
+  }
+
+  async updatePassword(userId, hash) {
+    const query = `
+    UPDATE users 
+    SET password = $1
+    WHERE user_id = $2
+  `;
+    await db.query(query, [hash, userId]);
+  }
+  async updateProfileImage(profileEntity) {
+    const query = `
+    UPDATE user_profile
+    SET profile_img_path = $1
+    WHERE user_id = $2
+  `;
+
+    await db.query(query, [profileEntity.profileImgPath, profileEntity.userId]);
+  }
+
+  _toUserEntity(row) {
+    return new User.Builder()
       .setUserId(row.user_id)
       .setEmail(row.email)
       .setPassword(row.password)
       .setStatus(row.status)
       .setCreatedAt(row.created_at)
       .build();
+  }
 
-    const userProfile = new UserProfile.Builder()
-      .setUserId(row.user_id)
+  _toProfileEntity(row) {
+    const profile = new UserProfile.Builder()
+      .setProfileId(row.profile_id)
+      .setUserId(row.profile_user_id)
       .setFName(row.f_name)
       .setMName(row.m_name)
       .setLName(row.l_name)
@@ -127,6 +212,12 @@ export default class UserRepo extends IUserRepository {
       .setProfileImg(row.profile_img_path)
       .build();
 
-    return { user, userProfile }; // Return both user and profile data
+    profile.profileImgUrl = this._buildImageUrl(row.profile_img_path);
+    return profile;
+  }
+  _buildImageUrl(filename) {
+    if (!filename) return null;
+    const base = process.env.API_BASE_URL || "http://localhost:5000";
+    return `${base}/uploads/profile/${filename}`;
   }
 }
