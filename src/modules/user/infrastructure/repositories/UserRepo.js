@@ -2,7 +2,7 @@ import db from "../../../../core/database/db.js";
 import IUserRepository from "../../domain/repositories/IUserRepository.js";
 import User from "../../domain/entities/User.js";
 import UserProfile from "../../domain/entities/UserProfile.js";
-
+const BASE_API = process.env.API_BASE_URL;
 export default class UserRepo extends IUserRepository {
   async findByEmail(email) {
     const query = `
@@ -44,7 +44,7 @@ export default class UserRepo extends IUserRepository {
     user.birthDate = row.birth_date || null;
 
     // Build image URL safely
-    const base = process.env.API_BASE_URL || "http://localhost:5000";
+    const base = BASE_API || "http://localhost:5000";
     user.profileImgUrl = row.profile_img_path
       ? `${base}/uploads/profile/${row.profile_img_path}`
       : null;
@@ -212,12 +212,18 @@ export default class UserRepo extends IUserRepository {
       .setProfileImg(row.profile_img_path)
       .build();
 
-    profile.profileImgUrl = this._buildImageUrl(row.profile_img_path);
+    const builtUrl = this._buildImageUrl(row.profile_img_path);
+
+    // SAFE OVERRIDE so every part of the system sees the FULL URL
+    profile.profileImgUrl = builtUrl;
+    profile.profileImgPath = builtUrl; // ≤ THIS makes it consistent everywhere
+
     return profile;
   }
+
   _buildImageUrl(filename) {
     if (!filename) return null;
-    const base = process.env.API_BASE_URL || "http://localhost:5000";
+    const base = BASE_API || "http://localhost:5000";
     return `${base}/uploads/profile/${filename}`;
   }
 }
