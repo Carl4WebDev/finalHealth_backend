@@ -10,10 +10,10 @@ import {
 
 const router = express.Router();
 
-
+import authMiddleware from "../../../../core/middleware/Auth.js";
 
 //working
-router.post("/", registerDoctor);
+router.post("/", authMiddleware, registerDoctor);
 //working
 router.post("/:id/approve", approveDoctor);
 //working

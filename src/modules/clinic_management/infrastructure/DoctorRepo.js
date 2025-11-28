@@ -66,7 +66,14 @@ export default class DoctorRepo extends IDoctorRepository {
   }
 
   async findAll() {
-    const result = await db.query(`SELECT * FROM doctors ORDER BY l_name ASC`);
+    const query = `
+    SELECT *
+    FROM doctors
+    WHERE verification_status IN ('Pending', 'Approved')
+    ORDER BY l_name ASC
+  `;
+
+    const result = await db.query(query);
     return result.rows.map((row) => this._toEntity(row));
   }
 
