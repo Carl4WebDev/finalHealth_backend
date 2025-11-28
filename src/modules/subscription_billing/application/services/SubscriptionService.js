@@ -90,4 +90,17 @@ export default class SubscriptionService {
       subscription: active,
     };
   }
+
+  async cancelForUser(userId) {
+    const active = await this.subscriptionRepo.findActiveByUser(userId);
+    if (!active) throw new Error("No active subscription to cancel");
+
+    const updated = active
+      .toBuilder()
+      .setStatus("cancelled")
+      .setAutoRenew(false)
+      .build();
+
+    return await this.subscriptionRepo.update(updated.subscriptionId, updated);
+  }
 }

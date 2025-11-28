@@ -59,7 +59,35 @@ export const getMyActiveSubscription = async (req, res) => {
     if (!userId) throw new Error("Authenticated user required");
 
     const active = await userSubRepo.findActiveByUser(userId);
-    res.status(200).json({ success: true, subscription: active });
+
+    if (!active) {
+      return res.status(200).json({
+        success: true,
+        subscription: null,
+        plan: null,
+      });
+    }
+
+    const plan = await planRepo.findById(active.planId);
+
+    res.status(200).json({
+      success: true,
+      subscription: active,
+      plan,
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
+export const cancelMySubscription = async (req, res) => {
+  try {
+    const userId = req.user?.user_id || req.user?.id;
+    if (!userId) throw new Error("Authenticated user required");
+
+    const cancelled = await subscriptionService.cancelForUser(userId);
+
+    res.status(200).json({ success: true, subscription: cancelled });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }

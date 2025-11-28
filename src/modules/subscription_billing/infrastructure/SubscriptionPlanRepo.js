@@ -5,7 +5,7 @@ import db from "../../../core/database/db.js";
 export default class SubscriptionPlanRepo extends ISubscriptionPlanRepository {
   async findById(id) {
     const res = await db.query(
-      'SELECT * FROM subscription_plan WHERE plan_id = $1 AND "isActive" = TRUE',
+      'SELECT * FROM subscription_plan WHERE plan_id = $1 AND "isactive" = TRUE',
       [id]
     );
     if (!res.rows.length) return null;
