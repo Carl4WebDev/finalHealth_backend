@@ -19,9 +19,9 @@ router.post("/:id/approve", approveDoctor);
 //working
 router.post("/:id/reject", rejectDoctor);
 //working
-router.post("/:id/assign-clinic", assignDoctorToClinic);
+router.post("/assign-clinic", authMiddleware, assignDoctorToClinic);
 
-router.get("/doctors", getDoctors);
+router.get("/doctors", authMiddleware, getDoctors);
 router.get("/doctors/:doctorId/clinics", getClinicsOfDoctor);
 
 export default router;

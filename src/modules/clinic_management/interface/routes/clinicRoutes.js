@@ -5,9 +5,14 @@ import {
   rejectClinic,
   getClinicById,
   getPendingClinics,
+  getAllClinics,
 } from "../controllers/ClinicController.js";
 
 const router = express.Router();
+
+import authMiddleware from "../../../../core/middleware/Auth.js";
+
+router.get("/all-clinics", authMiddleware, getAllClinics);
 
 //working
 router.post("/", registerClinic);

@@ -56,9 +56,8 @@ export default class DoctorRepo extends IDoctorRepository {
 
   async assignToClinic(doctorId, clinicId) {
     const result = await db.query(
-      `INSERT INTO doctor_clinics (doctor_id, clinic_id)
-       VALUES ($1, $2)
-       RETURNING *`,
+      `INSERT INTO doctor_clinics (doctor_id, clinic_id) VALUES ($1, $2)
+     ON CONFLICT (doctor_id, clinic_id) DO NOTHING`,
       [doctorId, clinicId]
     );
 

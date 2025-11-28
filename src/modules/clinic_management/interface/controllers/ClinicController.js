@@ -81,3 +81,12 @@ export const getPendingClinics = async (req, res) => {
     res.status(400).json({ success: false, error: err.message });
   }
 };
+
+export const getAllClinics = async (req, res) => {
+  try {
+    const clinics = await clinicRepo.getAllClinics();
+    res.status(200).json({ success: true, clinics });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};

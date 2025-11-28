@@ -64,8 +64,7 @@ export const rejectDoctor = async (req, res) => {
 
 export const assignDoctorToClinic = async (req, res) => {
   try {
-    const doctorId = Number(req.params.id);
-    const clinicId = Number(req.body.clinicId);
+    const { doctorId, clinicId } = req.body;
 
     await doctorService.assignDoctorToClinic(doctorId, clinicId, req.user);
 

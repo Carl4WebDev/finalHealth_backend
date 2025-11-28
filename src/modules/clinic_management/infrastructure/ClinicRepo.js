@@ -90,6 +90,21 @@ export default class ClinicRepo extends IClinicRepository {
   }
 
   /* ============================
+   GET ALL CLINICS (FULL DATA)
+============================ */
+  async getAllClinics() {
+    const query = `
+    SELECT *
+    FROM clinics
+    ORDER BY clinic_name ASC;
+  `;
+
+    const result = await db.query(query);
+
+    return result.rows.map((row) => this._toEntity(row));
+  }
+
+  /* ============================
      PRIVATE: MAP DB → ENTITY
   ============================ */
   _toEntity(row) {
