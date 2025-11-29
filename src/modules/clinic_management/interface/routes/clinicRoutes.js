@@ -17,7 +17,7 @@ router.get("/all-clinics", authMiddleware, getAllClinics);
 
 router.get("/unassigned/:doctorId", authMiddleware, getUnassignedClinics);
 //working
-router.post("/", registerClinic);
+router.post("/", authMiddleware, registerClinic);
 //working
 router.post("/:id/approve", approveClinic);
 //working
