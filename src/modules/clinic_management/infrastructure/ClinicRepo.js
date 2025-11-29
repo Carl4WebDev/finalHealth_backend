@@ -90,7 +90,7 @@ export default class ClinicRepo extends IClinicRepository {
   }
 
   /* ============================
-   GET ALL CLINICS (FULL DATA)
+   GET ALL CLINICS THAT ARE NOT CONNECTED TO A PARTICULAR CLNIC(FULL DATA)
 ============================ */
   async getAllClinics() {
     const query = `
@@ -100,6 +100,24 @@ export default class ClinicRepo extends IClinicRepository {
   `;
 
     const result = await db.query(query);
+
+    return result.rows.map((row) => this._toEntity(row));
+  }
+
+  async findUnassignedClinics(doctorId) {
+    const query = `
+    SELECT 
+      c.*
+    FROM clinics c
+    WHERE c.clinic_id NOT IN (
+      SELECT clinic_id 
+      FROM doctor_clinics 
+      WHERE doctor_id = $1
+    )
+    ORDER BY c.clinic_name ASC;
+  `;
+
+    const result = await db.query(query, [doctorId]);
 
     return result.rows.map((row) => this._toEntity(row));
   }

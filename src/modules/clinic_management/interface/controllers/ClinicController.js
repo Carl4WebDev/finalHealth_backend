@@ -90,3 +90,16 @@ export const getAllClinics = async (req, res) => {
     res.status(400).json({ success: false, error: err.message });
   }
 };
+
+export const getUnassignedClinics = async (req, res) => {
+  try {
+    const doctorId = req.params.doctorId;
+
+    const clinics = await clinicRepo.findUnassignedClinics(doctorId);
+
+    return res.json({ success: true, clinics });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, error: "Server error" });
+  }
+};

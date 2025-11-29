@@ -6,6 +6,7 @@ import {
   getClinicById,
   getPendingClinics,
   getAllClinics,
+  getUnassignedClinics,
 } from "../controllers/ClinicController.js";
 
 const router = express.Router();
@@ -14,6 +15,7 @@ import authMiddleware from "../../../../core/middleware/Auth.js";
 
 router.get("/all-clinics", authMiddleware, getAllClinics);
 
+router.get("/unassigned/:doctorId", authMiddleware, getUnassignedClinics);
 //working
 router.post("/", registerClinic);
 //working

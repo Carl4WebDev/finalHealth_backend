@@ -22,6 +22,6 @@ router.post("/:id/reject", rejectDoctor);
 router.post("/assign-clinic", authMiddleware, assignDoctorToClinic);
 
 router.get("/doctors", authMiddleware, getDoctors);
-router.get("/doctors/:doctorId/clinics", getClinicsOfDoctor);
+router.get("/doctors/:doctorId/clinics", authMiddleware, getClinicsOfDoctor);
 
 export default router;
