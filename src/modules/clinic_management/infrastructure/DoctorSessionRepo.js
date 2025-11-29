@@ -63,16 +63,20 @@ export default class DoctorSessionRepo extends IDoctorSessionRepository {
 
   async findConflicts(doctorId, clinicId, day, start, end) {
     const query = `
-      SELECT * FROM doctor_sessions
-      WHERE doctor_id=$1
-      AND clinic_id=$2
-      AND day_of_week=$3
+    SELECT * FROM doctor_sessions
+    WHERE doctor_id = $1
+    AND clinic_id = $2
+    AND day_of_week = $3
+    AND (
+      start_time < $5  -- existing starts before new ends
+      AND end_time > $4 -- existing ends after new starts
       AND (
-        (start_time <= $4 AND end_time > $4)
-        OR
-        (start_time < $5 AND end_time >= $5)
-      );
-    `;
+      (start_time < $5 AND end_time > $4)
+      OR (start_time = $4 AND end_time = $5)
+    )
+
+    );
+  `;
 
     const result = await db.query(query, [doctorId, clinicId, day, start, end]);
 
