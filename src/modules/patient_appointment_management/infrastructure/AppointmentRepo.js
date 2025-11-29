@@ -199,6 +199,18 @@ export default class AppointmentRepo extends IAppointmentRepository {
     });
   }
 
+  async findConflict(doctorId, clinicId, appointmentDate) {
+    const q = `
+      SELECT * FROM appointments
+      WHERE doctor_id = $1
+        AND clinic_id = $2
+        AND appointment_date = $3
+        AND status NOT IN ('Cancelled');
+    `;
+    const res = await db.query(q, [doctorId, clinicId, appointmentDate]);
+    return res.rows;
+  }
+
   _toEntity(row) {
     if (!row) return null;
 

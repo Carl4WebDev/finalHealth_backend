@@ -22,6 +22,15 @@ export default class AppointmentService {
       throw new Error("Appointment cannot be booked in the past");
     }
 
+    const conflict = await this.appointmentRepo.findConflict(
+      dto.doctorId,
+      dto.clinicId,
+      dto.appointmentDate
+    );
+    if (conflict.length > 0) {
+      throw new Error("Doctor already has an appointment for this date/time.");
+    }
+
     // Find the patient
     const patient = await this.patientRepo.findById(dto.patientId);
     if (!patient) throw new Error("Patient not found");
