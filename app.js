@@ -90,6 +90,13 @@ app.use("/api/notification-routes", notificationRoutes);
 import subscriptoinRoutes from "./src/modules/subscription_billing/interface/routes/subscriptionRoutes.js";
 app.use("/api/subscription-routes", subscriptoinRoutes);
 
+import adminVerification from "./src/modules/admin/adminVerification.js";
+app.use("/api/admin", adminVerification);
+
+import adminRoutes from "./src/modules/admin/adminRoutes.js";
+
+app.use("/api/admin", adminRoutes);
+
 // Serve profile images
 app.use(
   "/uploads/profile",
