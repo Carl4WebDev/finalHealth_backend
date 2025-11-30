@@ -11,11 +11,15 @@ import RescheduleAppointmentDTO from "../http/RescheduleAppointmentDTO.js";
 import AuditRepo from "../../../user/infrastructure/repositories/AuditRepo.js";
 import AuditLogService from "../../../user/application/services/AuditLogService.js";
 
+import DoctorSessionRepo from "../../../clinic_management/infrastructure/DoctorSessionRepo.js";
+
 // Dependency Injection — original
 const appointmentRepo = new AppointmentRepo();
 const patientRepo = new PatientRepo();
 const priorityRepo = new PriorityRepo();
 const factory = new AppointmentFactory();
+
+const doctorSessionRepo = new DoctorSessionRepo();
 
 // 🔵 AUDIT INJECTION — ONLY ADDITION
 const auditRepo = new AuditRepo();
@@ -26,6 +30,8 @@ const appointmentService = new AppointmentService(
   appointmentRepo,
   patientRepo,
   priorityRepo,
+  doctorSessionRepo,
+
   factory,
   auditService
 );

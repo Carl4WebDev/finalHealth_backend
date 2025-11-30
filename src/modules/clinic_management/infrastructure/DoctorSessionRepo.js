@@ -83,6 +83,17 @@ export default class DoctorSessionRepo extends IDoctorSessionRepository {
     return result.rows.map((row) => this._toEntity(row));
   }
 
+  async findById(id) {
+    const result = await db.query(
+      `SELECT * FROM doctor_sessions WHERE session_id=$1`,
+      [id]
+    );
+
+    if (result.rows.length === 0) return null;
+
+    return this._toEntity(result.rows[0]);
+  }
+
   _toEntity(row) {
     return new DoctorSession.Builder()
       .setSessionId(row.session_id)

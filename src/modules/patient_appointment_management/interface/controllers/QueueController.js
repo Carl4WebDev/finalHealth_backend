@@ -44,17 +44,17 @@ export const getQueue = async (req, res) => {
 
 export const updateQueueStatus = async (req, res) => {
   try {
-    const queueEntryId = Number(req.params.id);
-    const { status } = req.body;
+    const queueEntryId = Number(req.params.id); // The queue entry ID
+    const { status } = req.body; // The new status (e.g., "In Progress", "Completed")
 
     const entry = await queueService.updateStatus(
       queueEntryId,
       status,
       req.user
-    );
+    ); // Pass the actor (user) info for audit
 
-    res.status(200).json({ success: true, entry });
+    res.status(200).json({ success: true, entry }); // Respond with the updated entry
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: err.message }); // Handle errors
   }
 };

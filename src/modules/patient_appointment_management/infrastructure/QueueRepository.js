@@ -50,7 +50,6 @@ export default class QueueRepository extends IQueueRepository {
     LEFT JOIN patients u ON u.patient_id = q.patient_id
     WHERE q.doctor_id = $1 
       AND q.clinic_id = $2
-      AND a.status  NOT IN ('Completed', 'Cancelled')
     ORDER BY p.priority_rank ASC, q.arrival_time ASC;
   `;
 
@@ -69,19 +68,18 @@ export default class QueueRepository extends IQueueRepository {
       };
     });
   }
-
   async updateStatus(queueEntryId, status) {
     const result = await db.query(
       `
-      UPDATE queue_entries
-      SET status=$1
-      WHERE queue_entry_id=$2
-      RETURNING *;
-      `,
+    UPDATE queue_entries
+    SET status=$1
+    WHERE queue_entry_id=$2
+    RETURNING *;
+    `,
       [status, queueEntryId]
     );
 
-    return this._toEntity(result.rows[0]);
+    return this._toEntity(result.rows[0]); // Return the updated entry as an entity
   }
 
   _toEntity(row) {

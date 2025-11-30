@@ -61,15 +61,15 @@ export default class QueueService {
   }
 
   async updateStatus(queueEntryId, status, actor) {
-    const updated = await this.queueRepo.updateStatus(queueEntryId, status);
+    const updated = await this.queueRepo.updateStatus(queueEntryId, status); // Update the status in the repository
 
     await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: `QUEUE_${status.toUpperCase()}`,
-      tableAffected: "queue_entries",
-      recordId: queueEntryId,
-      details: status,
+      actorId: actor.id, // Actor refers to the user who initiated the action
+      actorType: actor.role, // Role of the actor (e.g., admin, secretary)
+      action: `QUEUE_${status.toUpperCase()}`, // The action type for audit logs
+      tableAffected: "queue_entries", // Table being affected
+      recordId: queueEntryId, // The affected record ID
+      details: status, // The new status being set
     });
 
     return updated;

@@ -3,63 +3,53 @@ export default class AppointmentService {
     appointmentRepo,
     patientRepo,
     priorityRepo,
+    doctorSessionRepo,
     factory,
     auditService
   ) {
     this.appointmentRepo = appointmentRepo;
     this.patientRepo = patientRepo;
     this.priorityRepo = priorityRepo;
+    this.doctorSessionRepo = doctorSessionRepo; // <-- IMPORTANT
     this.factory = factory;
     this.auditService = auditService; // NEW
   }
 
   async createAppointment(dto, actor) {
-    // Ensure the appointment date is not in the past
+    // Normalize date
     const appointmentDate = new Date(dto.appointmentDate);
     const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
 
+    // Prevent booking in the past
     if (appointmentDate < currentDate) {
       throw new Error("Appointment cannot be booked in the past");
     }
 
-    const conflict = await this.appointmentRepo.findConflict(
-      dto.doctorId,
-      dto.clinicId,
-      dto.appointmentDate
-    );
-    if (conflict.length > 0) {
-      throw new Error("Doctor already has an appointment for this date/time.");
-    }
-
-    // Find the patient
-    const patient = await this.patientRepo.findById(dto.patientId);
-    if (!patient) throw new Error("Patient not found");
-
-    // Validate the priority level
-    const priority = await this.priorityRepo.findById(dto.priorityId);
-    if (!priority) throw new Error("Priority not found");
-
-    // Check for any conflicts (e.g., double-booking)
-    const conflicts = await this.appointmentRepo.checkDoubleBooking(
+    // 🚫 Restrict ONLY double-booking of PATIENT
+    const patientConflicts = await this.appointmentRepo.checkDoubleBooking(
       dto.patientId,
       dto.appointmentDate
     );
-    if (conflicts.length > 0) {
+
+    if (patientConflicts.length > 0) {
       throw new Error("Patient already has an appointment on this date");
     }
 
-    // Create the appointment
+    // No doctor conflict – doctors can have multiple appointments per day
+
+    // Create appointment
     const appointment = this.factory.createAppointment(dto);
     const saved = await this.appointmentRepo.save(appointment);
 
-    // Record the action in the audit log
+    // Audit
     await this.auditService.record({
-      actorId: actor.id, // Actor refers to the user who created the appointment
-      actorType: actor.role, // Actor's role (e.g., admin, secretary, etc.)
+      actorId: actor.id,
+      actorType: actor.role,
       action: "APPOINTMENT_CREATED",
       tableAffected: "appointment",
       recordId: saved.appointmentId,
-      details: JSON.stringify(dto), // Store the appointment details
+      details: JSON.stringify(dto),
     });
 
     return saved;
