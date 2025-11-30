@@ -37,6 +37,10 @@ export default class PatientRepo extends IPatientRepository {
     if (result.rows.length === 0) return null;
     return this._toEntity(result.rows[0]);
   }
+  async getAll() {
+    const result = await db.query("SELECT * FROM patients"); // Fetch all patients from the database
+    return result.rows; // Return the fetched rows
+  }
 
   async findBySearch(term) {
     const like = `%${term}%`;

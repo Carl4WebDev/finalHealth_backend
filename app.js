@@ -48,6 +48,9 @@ import queueRoutes from "./src/modules/patient_appointment_management/interface/
 app.use("/api/queue-routes", queueRoutes);
 
 //subsystem 3 "Patient & Appointment Management"
+import medicalRoutes from "./src/modules/patient_appointment_management/interface/routes/medical-history/medicalRecord.js";
+app.use("/api/medical-records", medicalRoutes);
+
 import patientRoutes from "./src/modules/patient_appointment_management/interface/routes/patientRoutes.js";
 app.use("/api/patient-routes", patientRoutes);
 

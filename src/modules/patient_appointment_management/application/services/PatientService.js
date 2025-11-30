@@ -38,6 +38,14 @@ export default class PatientService {
   async searchPatients(term) {
     return await this.patientRepo.findBySearch(term);
   }
+  async getAllPatients() {
+    try {
+      const patients = await this.patientRepo.getAll(); // Fetch all patients from the repository
+      return patients;
+    } catch (err) {
+      throw new Error("Error while fetching all patients: " + err.message);
+    }
+  }
 
   async updatePatient(dto, actor) {
     const existing = await this.patientRepo.findById(dto.patientId);

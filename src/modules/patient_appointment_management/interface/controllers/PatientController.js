@@ -65,3 +65,20 @@ export const searchPatients = async (req, res) => {
     res.status(400).json({ success: false, error: err.message });
   }
 };
+
+export const getAllPatients = async (req, res) => {
+  try {
+    const patients = await patientService.getAllPatients(); // Fetch all patients using the PatientService
+
+    if (!patients || patients.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "No patients found.",
+      });
+    }
+
+    res.status(200).json({ success: true, patients });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
