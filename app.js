@@ -27,9 +27,15 @@ uploadDirs.forEach((dir) => {
   }
 });
 
+import notFoundHandler from "./src/core/middleware/notFoundHandler.js";
+import errorHandler from "./src/core/middleware/errorHandler.js";
+
 //subsystem 1 "User & Role Management"
 import userRoutes from "./src/modules/user/interface/routes.js";
 app.use("/api/users", userRoutes);
+
+import adminRoutes from "./src/modules/user/interface/adminRoutes.js";
+app.use("/api/admin", adminRoutes);
 
 import auditRoutes from "./src/modules/user/interface/auditRoutes.js";
 app.use("/api/audit", auditRoutes);
@@ -90,19 +96,17 @@ app.use("/api/notification-routes", notificationRoutes);
 import subscriptoinRoutes from "./src/modules/subscription_billing/interface/routes/subscriptionRoutes.js";
 app.use("/api/subscription-routes", subscriptoinRoutes);
 
-import adminVerification from "./src/modules/admin/adminVerification.js";
-app.use("/api/admin", adminVerification);
-
-import adminRoutes from "./src/modules/admin/adminRoutes.js";
-
-app.use("/api/admin", adminRoutes);
-
 // Serve profile images
 app.use(
   "/uploads/profile",
   express.static(path.join(process.cwd(), "uploads/profile"))
 );
 
+// 404 handler – after all routes
+app.use(notFoundHandler);
+
+// GLOBAL ERROR HANDLER – last middleware
+app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
   console.log(`🚀 FinalHealth backend running on port ${PORT}`)

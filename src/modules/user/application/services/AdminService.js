@@ -1,5 +1,7 @@
 import bcrypt from "bcrypt";
 import Admin from "../../domain/entities/Admin.js";
+import AppError from "../../../../core/errors/AppError.js";
+import ValidationError from "../../../../core/errors/ValidationError.js";
 
 export default class AdminService {
   constructor(adminRepo, auditRepo, authTokenService) {
@@ -8,16 +10,33 @@ export default class AdminService {
     this.authTokenService = authTokenService;
   }
 
+  // ============================================================
+  // REGISTER ADMIN
+  // ============================================================
   async register(dto) {
-    const exists = await this.adminRepo.findByEmail(dto.email);
-    if (exists) throw new Error("Admin email already exists");
+    const { fName, lName, email, password } = dto;
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    if (!fName || !lName || !email || !password) {
+      throw new ValidationError("All fields are required", {
+        missingFields: ["fName", "lName", "email", "password"],
+      });
+    }
+
+    const exists = await this.adminRepo.findByEmail(email);
+    if (exists) {
+      throw new AppError(
+        "Admin email already exists",
+        409,
+        "ADMIN_EMAIL_EXISTS"
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const adminEntity = new Admin.Builder()
-      .setFName(dto.fName)
-      .setLName(dto.lName)
-      .setEmail(dto.email)
+      .setFName(fName)
+      .setLName(lName)
+      .setEmail(email)
       .setPassword(hashedPassword)
       .setStatus("Active")
       .build();
@@ -36,15 +55,29 @@ export default class AdminService {
     return createdAdmin;
   }
 
+  // ============================================================
+  // LOGIN ADMIN
+  // ============================================================
   async login(dto) {
-    const admin = await this.adminRepo.findByEmail(dto.email);
+    const { email, password } = dto;
 
-    if (!admin) throw new Error("Invalid credentials");
+    if (!email || !password) {
+      throw new ValidationError("Email and password are required");
+    }
 
-    const valid = await bcrypt.compare(dto.password, admin.password);
-    if (!valid) throw new Error("Invalid credentials");
+    const admin = await this.adminRepo.findByEmail(email);
+    if (!admin) {
+      throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
+    }
 
-    if (!admin.isActive()) throw new Error("Inactive admin account");
+    const valid = await bcrypt.compare(password, admin.password);
+    if (!valid) {
+      throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
+    }
+
+    if (!admin.isActive()) {
+      throw new AppError("Admin account is inactive", 403, "ADMIN_INACTIVE");
+    }
 
     const tokenPayload = {
       adminId: admin.adminId,

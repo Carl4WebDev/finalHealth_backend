@@ -1,141 +1,171 @@
+/**
+ * USER CONTROLLER USING GLOBAL ERROR HANDLING
+ *
+ * EXPLANATION:
+ * -------------------------------------------------------------
+ * 1. This controller no longer uses try/catch inside every
+ *    function. Instead, we wrap each handler with asyncHandler(),
+ *    which sends any error to the global errorHandler middleware.
+ *
+ * 2. All operational/business errors thrown from services
+ *    MUST use AppError (e.g., invalid login, duplicate email).
+ *    These will be cleanly serialized by errorHandler().
+ *
+ * 3. All success responses use sendSuccess(), ensuring the API
+ *    always returns consistent envelopes:
+ *
+ *    {
+ *      "status": "success",
+ *      "message": "...",
+ *      "data": { ... }
+ *    }
+ *
+ * 4. This aligns with real SaaS products:
+ *    - Stripe → consistent error envelopes
+ *    - Supabase → structured error + message + code
+ *    - Clerk → consistent success + error arrays
+ *
+ * 5. Controllers become thin. Zero business logic here.
+ *    They only orchestrate: DTO → Service → Response.
+ *
+ * 6. ANY thrown error goes through:
+ *      asyncHandler → errorHandler → final JSON error response
+ *
+ * This removes duplication, prevents inconsistent responses,
+ * and centralizes error management as required in Clean Architecture.
+ * -------------------------------------------------------------
+ */
+
 import UserRepo from "../../infrastructure/repositories/UserRepo.js";
-import AuditRepo from "../../infrastructure/repositories/AuditRepo.js";
+import AuditRepo from "../../../audit_compliance/infrastructure/repositories/AuditRepo.js";
 import AuthTokenService from "../../../../core/middleware/AuthTokenService.js";
 import UserService from "../../application/services/UserService.js";
 
 import RegisterUserDTO from "../http/dtos/RegisterDTO.js";
 import LoginUserDTO from "../http/dtos/LoginUserDTO.js";
-import UserResponseDTO from "../http/dtos/UserResponseDTO.js";
 import ChangePasswordDTO from "../http/dtos/ChangePasswordDTO.js";
 
-// Wiring dependencies (you can move this to a DI container later)
+import { sendSuccess } from "../../../../core/http/apiResponse.js";
+import { asyncHandler } from "../../../../core/middleware/asyncHandler.js";
+
+// Wiring dependencies
 const userRepo = new UserRepo();
 const auditRepo = new AuditRepo();
 const authTokenService = new AuthTokenService();
-
 const userService = new UserService(userRepo, auditRepo, authTokenService);
 
-export const register = async (req, res) => {
-  try {
-    const dto = new RegisterUserDTO(req.body);
-    const user = await userService.register(dto);
-    const userResponse = new UserResponseDTO(user);
+// =============================================================
+// REGISTER USER
+// =============================================================
+export const register = asyncHandler(async (req, res) => {
+  const dto = new RegisterUserDTO(req.body);
+  const user = await userService.register(dto);
 
-    res.status(201).json({ success: true, user: userResponse });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "User registered successfully",
+    data: { user },
+  });
+});
+
+// =============================================================
+// LOGIN USER
+// =============================================================
+export const login = asyncHandler(async (req, res) => {
+  const dto = new LoginUserDTO(req.body);
+  const { token, user } = await userService.login(dto);
+
+  return sendSuccess(res, {
+    message: "Login successful",
+    data: { token, user },
+  });
+});
+
+// =============================================================
+// UPDATE PROFILE
+// =============================================================
+export const updateUserProfile = asyncHandler(async (req, res) => {
+  const userId = req.params.userId;
+
+  const payload = {
+    fName: req.body.fName,
+    mName: req.body.mName,
+    lName: req.body.lName,
+    contactNum: req.body.contactNum,
+    address: req.body.address,
+    birthDate: req.body.birthDate,
+  };
+
+  const updatedUser = await userService.updateProfile(userId, payload);
+
+  return sendSuccess(res, {
+    message: "User profile updated",
+    data: { user: updatedUser },
+  });
+});
+
+// =============================================================
+// FETCH USER PERSONAL INFO
+// =============================================================
+export const getUserPersonalInfo = asyncHandler(async (req, res) => {
+  const userId = Number(req.user.id);
+  const userInfo = await userService.getUserPersonalInfo(userId);
+
+  return sendSuccess(res, {
+    data: { userInfo },
+  });
+});
+
+// =============================================================
+// CHANGE PASSWORD
+// =============================================================
+export const changePassword = asyncHandler(async (req, res) => {
+  const userId = Number(req.user.id);
+  const dto = new ChangePasswordDTO(req.body);
+
+  const result = await userService.changePassword(userId, dto);
+
+  return sendSuccess(res, {
+    message: "Password updated successfully",
+    data: result,
+  });
+});
+
+// =============================================================
+// UPLOAD PROFILE IMAGE
+// =============================================================
+export const uploadProfileImage = asyncHandler(async (req, res) => {
+  const userId = Number(req.user.id);
+
+  if (!req.file) {
+    throw new AppError("No file uploaded", 400, "NO_FILE_UPLOADED");
   }
-};
 
-export const login = async (req, res) => {
-  try {
-    const dto = new LoginUserDTO(req.body);
-    const { token, user } = await userService.login(dto);
-    const userResponse = new UserResponseDTO(user);
+  const filePath = `/uploads/profile/${req.file.filename}`;
+  await userService.updateProfileImage(userId, filePath);
 
-    res.status(200).json({ success: true, token, user: userResponse });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    message: "Profile image updated",
+    data: { profileImgPath: filePath },
+  });
+});
 
-// Controller for updating the user's profile (excluding email)
-export const updateUserProfile = async (req, res) => {
-  const userId = req.params.userId; // Get user ID from params
-  const { fName, mName, lName, contactNum, address, birthDate } = req.body; // Get the new profile data
+// =============================================================
+// UPDATE ACCOUNT SETTINGS
+// =============================================================
+export const updateSettings = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
 
-  try {
-    // Pass the data to the service layer
-    const updatedUser = await userService.updateProfile(userId, {
-      fName,
-      mName,
-      lName,
-      contactNum,
-      address,
-      birthDate,
-    });
+  const payload = {
+    currentPassword: req.body.currentPassword,
+    newPassword: req.body.newPassword,
+    profileImgPath: req.file ? req.file.filename : undefined,
+  };
 
-    res.status(200).json({ success: true, user: updatedUser });
-  } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
-  }
-};
+  const result = await userService.updateSettings(userId, payload);
 
-export const getUserPersonalInfo = async (req, res) => {
-  try {
-    const userId = Number(req.user.id);
-    const userInfo = await userService.getUserPersonalInfo(userId);
-    res.status(200).json({ success: true, userInfo });
-  } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
-  }
-};
-
-export const changePassword = async (req, res) => {
-  try {
-    const userId = Number(req.user.id);
-    const dto = new ChangePasswordDTO(req.body);
-    console.log(userId);
-    console.log(dto);
-
-    const result = await userService.changePassword(userId, dto);
-
-    res.status(200).json({
-      success: true,
-      message: "Password updated successfully",
-      data: result,
-    });
-  } catch (err) {
-    res.status(400).json({
-      success: false,
-      error: err.message,
-    });
-  }
-};
-
-export const uploadProfileImage = async (req, res) => {
-  try {
-    const userId = Number(req.user.id);
-    console.log(userId);
-
-    if (!req.file) {
-      return res
-        .status(400)
-        .json({ success: false, error: "No file uploaded" });
-    }
-
-    const filePath = `/uploads/profile/${req.file.filename}`;
-
-    const updated = await userService.updateProfileImage(userId, filePath);
-
-    res.status(200).json({
-      success: true,
-      message: "Profile image updated",
-      profileImgPath: filePath,
-    });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
-
-export const updateSettings = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const payload = {
-      currentPassword: req.body.currentPassword,
-      newPassword: req.body.newPassword,
-      profileImgPath: req.file ? req.file.filename : undefined,
-    };
-
-    const result = await userService.updateSettings(userId, payload);
-
-    res.status(200).json({
-      success: true,
-      message: "Settings updated",
-      user: result,
-    });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    message: "Settings updated",
+    data: { user: result },
+  });
+});

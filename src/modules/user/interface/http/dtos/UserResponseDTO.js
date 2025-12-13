@@ -7,9 +7,9 @@ export default class UserResponseDTO {
     this.createdAt = user.createdAt;
 
     // OPTIONAL PROFILE FIELDS (safe)
-    this.firstName = user.firstName || null;
-    this.middleName = user.middleName || null;
-    this.lastName = user.lastName || null;
+    this.fName = user.fName || null;
+    this.mName = user.mName || null;
+    this.lName = user.lName || null;
 
     this.contactNumber = user.contactNumber || null;
     this.address = user.address || null;

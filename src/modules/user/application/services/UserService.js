@@ -2,6 +2,9 @@ import bcrypt from "bcrypt";
 import User from "../../domain/entities/User.js";
 import UserProfile from "../../domain/entities/UserProfile.js";
 
+import AppError from "../../../../core/errors/AppError.js";
+import ValidationError from "../../../../core/errors/ValidationError.js";
+
 export default class UserService {
   constructor(userRepo, auditRepo, authTokenService) {
     this.userRepo = userRepo;
@@ -9,12 +12,28 @@ export default class UserService {
     this.authTokenService = authTokenService;
   }
 
-  // dto: RegisterUserDTO
+  // ============================================================
+  // REGISTER USER
+  // ============================================================
   async register(dto) {
     const { email, password } = dto;
 
+    // Validate payload
+    if (!email || !password) {
+      throw new ValidationError("Email and password are required", {
+        missingFields: ["email", "password"],
+      });
+    }
+
+    // Check if email already exists
     const exists = await this.userRepo.findByEmail(email);
-    if (exists) throw new Error("Email already exists");
+    if (exists) {
+      throw new AppError(
+        "Email already exists",
+        409, // Conflict
+        "EMAIL_EXISTS"
+      );
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -38,7 +57,7 @@ export default class UserService {
 
     await this.userRepo.createUserProfile(profileEntity);
 
-    // You can log registration if you want
+    // Audit (optional)
     if (this.auditRepo?.logAuth) {
       await this.auditRepo.logAuth(
         createdUser.userId,
@@ -48,13 +67,18 @@ export default class UserService {
       );
     }
 
-    // Return the domain entity; controller will map it to DTO
     return createdUser;
   }
 
-  // dto: LoginUserDTO
+  // ============================================================
+  // LOGIN USER
+  // ============================================================
   async login(dto) {
     const { email, password } = dto;
+
+    if (!email || !password) {
+      throw new ValidationError("Email and password are required");
+    }
 
     const user = await this.userRepo.findByEmail(email);
 
@@ -65,7 +89,8 @@ export default class UserService {
         "FAILED_LOGIN",
         `Email not found: ${email}`
       );
-      throw new Error("Invalid credentials");
+
+      throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
 
     const valid = await bcrypt.compare(password, user.password);
@@ -76,7 +101,8 @@ export default class UserService {
         "FAILED_LOGIN",
         "Wrong password"
       );
-      throw new Error("Invalid credentials");
+
+      throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
 
     if (!user.isActive()) {
@@ -86,7 +112,8 @@ export default class UserService {
         "FAILED_LOGIN",
         "Inactive account"
       );
-      throw new Error("Account is inactive");
+
+      throw new AppError("Account is inactive", 403, "ACCOUNT_INACTIVE");
     }
 
     const tokenPayload = {
@@ -101,47 +128,30 @@ export default class UserService {
       user.userId,
       "USER",
       "LOGIN_SUCCESS",
-      "User logged in",
-      user.userId
+      "User logged in"
     );
 
     return { token, user };
   }
 
-  async updateProfile(userId, dto) {
-    const existing = await this.userRepo.findByUserId(userId);
-    if (!existing) throw new Error("User profile not found");
-
-    // Selective update (no null overwrite)
-    const updatedData = {
-      fName: dto.fName ?? existing.fName,
-      mName: dto.mName ?? existing.mName,
-      lName: dto.lName ?? existing.lName,
-      contactNum: dto.contactNum ?? existing.contactNum,
-      address: dto.address ?? existing.address,
-      birthDate: dto.birthDate ?? existing.birthDate,
-    };
-
-    const updated = await this.userRepo.updateProfile(userId, updatedData);
-    return updated;
-  }
-
-  // Method to get user and profile info by userId
+  // ============================================================
+  // GET USER PERSONAL INFO
+  // ============================================================
   async getUserPersonalInfo(userId) {
     const { user, userProfile } = await this.userRepo.findByUserId(userId);
 
-    if (!user || !userProfile) throw new Error("User or profile not found");
+    if (!user || !userProfile) {
+      throw new AppError("User or profile not found", 404, "USER_NOT_FOUND");
+    }
 
-    // Build User entity
     const userEntity = new User.Builder()
       .setUserId(user.userId)
       .setEmail(user.email)
-      .setPassword(user.password) // Required by builder
+      .setPassword(user.password)
       .setStatus(user.status)
       .setCreatedAt(user.createdAt)
       .build();
 
-    // Build UserProfile entity
     const profileEntity = new UserProfile.Builder()
       .setProfileId(userProfile.profileId)
       .setUserId(userProfile.userId)
@@ -157,69 +167,41 @@ export default class UserService {
     return { user: userEntity, profile: profileEntity };
   }
 
-  async changePassword(userId, dto) {
-    const user = await this.userRepo.findByUserId(userId);
-    if (!user) throw new Error("User not found");
-
-    const valid = await bcrypt.compare(dto.currentPassword, user.password);
-    if (!valid) throw new Error("Incorrect current password");
-
-    const hashed = await bcrypt.hash(dto.newPassword, 10);
-
-    await this.userRepo.updatePassword(userId, hashed);
-
-    await this.auditRepo.logAuth(
-      userId,
-      "USER",
-      "PASSWORD_CHANGED",
-      "User updated their password",
-      userId
-    );
-
-    return true;
-  }
-
-  async updateProfileImage(userId, newPath) {
-    const profile = await this.userRepo.findByUserId(userId);
-    if (!profile) throw new Error("Profile not found");
-
-    const updated = await this.userRepo.updateProfileImage(userId, newPath);
-
-    await this.auditRepo.logAction({
-      actorId: userId,
-      actorType: "USER",
-      action: "PROFILE_IMAGE_UPDATED",
-      details: `User updated profile image`,
-      recordId: userId,
-    });
-
-    return updated;
-  }
-
+  // ============================================================
+  // UPDATE ACCOUNT SETTINGS
+  // ============================================================
   async updateSettings(userId, dto) {
     const { currentPassword, newPassword, profileImgPath } = dto;
 
     const result = await this.userRepo.findByUserId(userId);
-    if (!result || !result.user) throw new Error("User not found");
+    if (!result || !result.user) {
+      throw new AppError("User not found", 404, "USER_NOT_FOUND");
+    }
 
     const user = result.user;
     const userProfile = result.userProfile;
 
-    // ============================================================
-    // PASSWORD UPDATE (optional + SAFE)
-    // ============================================================
+    // ------------------------------------------------------------
+    // PASSWORD UPDATE
+    // ------------------------------------------------------------
     if (currentPassword || newPassword) {
-      // prevent undefined issues
       if (!currentPassword || !newPassword) {
-        throw new Error("Both current and new password are required");
+        throw new ValidationError(
+          "Both current and new password are required",
+          { missingFields: ["currentPassword", "newPassword"] }
+        );
       }
 
       const valid = await bcrypt.compare(currentPassword, user.password);
-      if (!valid) throw new Error("Current password is incorrect");
+      if (!valid) {
+        throw new AppError(
+          "Current password is incorrect",
+          400,
+          "WRONG_CURRENT_PASSWORD"
+        );
+      }
 
       const newHash = await bcrypt.hash(newPassword, 10);
-
-      // UPDATE ONLY PASSWORD — nothing else changes
       await this.userRepo.updatePassword(userId, newHash);
 
       await this.auditRepo.logAuth(
@@ -230,13 +212,13 @@ export default class UserService {
       );
     }
 
-    // ============================================================
-    // PROFILE IMAGE UPDATE (optional + SAFE)
-    // ============================================================
+    // ------------------------------------------------------------
+    // PROFILE IMAGE UPDATE
+    // ------------------------------------------------------------
     if (profileImgPath) {
       const updatedProfile = userProfile
         .toBuilder()
-        .setProfileImg(profileImgPath || userProfile.profileImgPath) // SAFE
+        .setProfileImg(profileImgPath)
         .build();
 
       await this.userRepo.updateProfileImage(updatedProfile);
@@ -245,8 +227,8 @@ export default class UserService {
         actorId: userId,
         actorType: "USER",
         action: "UPDATE_PROFILE_IMAGE",
-        details: "User updated profile picture",
         tableAffected: "user_profile",
+        details: "User updated profile picture",
       });
     }
 

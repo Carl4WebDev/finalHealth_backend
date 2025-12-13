@@ -171,24 +171,6 @@ export default class UserRepo extends IUserRepository {
     return this._toProfileEntity(rows[0]);
   }
 
-  async updatePassword(userId, hash) {
-    const query = `
-    UPDATE users 
-    SET password = $1
-    WHERE user_id = $2
-  `;
-    await db.query(query, [hash, userId]);
-  }
-  async updateProfileImage(profileEntity) {
-    const query = `
-    UPDATE user_profile
-    SET profile_img_path = $1
-    WHERE user_id = $2
-  `;
-
-    await db.query(query, [profileEntity.profileImgPath, profileEntity.userId]);
-  }
-
   _toUserEntity(row) {
     return new User.Builder()
       .setUserId(row.user_id)
