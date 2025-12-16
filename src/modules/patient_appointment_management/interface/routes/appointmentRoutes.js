@@ -16,32 +16,53 @@ import {
 
 // Importing authMiddleware
 import authMiddleware from "../../../../core/middleware/Auth.js"; // Correct path to the middleware
-
+import { requireUser } from "../../../../core/middleware/requireUser.js";
 const router = express.Router();
 
-// Public routes
-router.get("/doctor/:doctorId/clinic/:clinicId/today", listTodayAppointments); // No authentication needed for this one
-router.get("/:id", getAppointmentById); // Public route, doesn't need auth
-router.get("/", listAppointmentsByDate); // Public route, doesn't need auth
+router.get("/doctor/:doctorId/clinic/:clinicId/today", listTodayAppointments);
 
-// Protected routes (authentication required)
-router.post("/", authMiddleware, createAppointment); // Create new appointment (requires auth)
-router.put("/:id/reschedule", authMiddleware, rescheduleAppointment); // Reschedule appointment (requires auth)
-router.put("/:id/cancel", authMiddleware, cancelAppointment); // Cancel appointment (requires auth)
-router.put("/:id/complete", authMiddleware, completeAppointment); // Complete appointment (requires auth)
+router.get("/appointment/:id", getAppointmentById);
+router.get("/", listAppointmentsByDate);
 
-// List appointments by patient — returns all appointments belonging to a specific patient (protected)
-router.get("/patient/:patientId", authMiddleware, listAppointmentsByPatient);
+router.post("/", authMiddleware, requireUser, createAppointment);
 
-// Fetch ALL appointments for a doctor IN a specific clinic (protected)
+router.put(
+  "/appointment/:id/reschedule",
+  authMiddleware,
+  requireUser,
+  rescheduleAppointment
+);
+
+router.put(
+  "/appointment/:id/cancel",
+  authMiddleware,
+  requireUser,
+  cancelAppointment
+);
+
+router.put(
+  "/appointment/:id/complete",
+  authMiddleware,
+  requireUser,
+  completeAppointment
+);
+
+router.get(
+  "/patient/:patientId",
+  authMiddleware,
+  requireUser,
+  listAppointmentsByPatient
+);
+
 router.get(
   "/doctor/:doctorId/clinic/:clinicId",
   authMiddleware,
+  requireUser,
   listAllAppointmentsForDoctor
 );
 
 // Route to update the appointment status
-router.put("/:appointmentId/status", async (req, res) => {
+router.put("/appointment/:appointmentId/status", async (req, res) => {
   const { appointmentId } = req.params;
   const { status } = req.body;
 

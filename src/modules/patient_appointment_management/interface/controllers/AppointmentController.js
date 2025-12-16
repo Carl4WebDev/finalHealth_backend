@@ -1,3 +1,12 @@
+/**
+ * APPOINTMENT CONTROLLER
+ *
+ * - No try/catch
+ * - No audit imports
+ * - asyncHandler only
+ * - Global error handling
+ */
+
 import AppointmentRepo from "../../infrastructure/AppointmentRepo.js";
 import PatientRepo from "../../infrastructure/PatientRepo.js";
 import PriorityRepo from "../../infrastructure/PriorityRepo.js";
@@ -7,198 +16,153 @@ import AppointmentService from "../../application/services/AppointmentService.js
 import CreateAppointmentDTO from "../http/CreateAppointmentDTO.js";
 import RescheduleAppointmentDTO from "../http/RescheduleAppointmentDTO.js";
 
-// 🔵 AUDIT IMPORTS — ONLY ADDITION
-import AuditRepo from "../../../user/infrastructure/repositories/AuditRepo.js";
-import AuditLogService from "../../../user/application/services/AuditLogService.js";
-
 import DoctorSessionRepo from "../../../clinic_management/infrastructure/DoctorSessionRepo.js";
 
-// Dependency Injection — original
+import { asyncHandler } from "../../../../core/middleware/asyncHandler.js";
+import { sendSuccess } from "../../../../core/http/apiResponse.js";
+
+import eventBus from "../../../../core/events/EventBus.js";
+
+// ============================================================
+// DEPENDENCY INJECTION (STANDARD)
+// ============================================================
 const appointmentRepo = new AppointmentRepo();
 const patientRepo = new PatientRepo();
 const priorityRepo = new PriorityRepo();
 const factory = new AppointmentFactory();
-
 const doctorSessionRepo = new DoctorSessionRepo();
 
-// 🔵 AUDIT INJECTION — ONLY ADDITION
-const auditRepo = new AuditRepo();
-const auditService = new AuditLogService(auditRepo);
-
-// 🔵 inject auditService into AppointmentService — ONLY CHANGE
 const appointmentService = new AppointmentService(
   appointmentRepo,
   patientRepo,
   priorityRepo,
   doctorSessionRepo,
-
   factory,
-  auditService
+  eventBus // ✅ inject event bus, NOT audit
 );
 
-// =============================
+// ============================================================
 // CREATE APPOINTMENT
-// =============================
-export const createAppointment = async (req, res) => {
-  try {
-    const dto = new CreateAppointmentDTO(req.body);
+// ============================================================
+export const createAppointment = asyncHandler(async (req, res) => {
+  const dto = new CreateAppointmentDTO(req.body);
 
-    // 🔵 ONLY CHANGE: pass actor
-    const appointment = await appointmentService.createAppointment(
-      dto,
-      req.user
-    );
+  const appointment = await appointmentService.createAppointment(dto, req.user);
 
-    res.status(201).json({ success: true, appointment });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Appointment created successfully",
+    data: { appointment },
+  });
+});
 
-// =============================
+// ============================================================
 // RESCHEDULE
-// =============================
-export const rescheduleAppointment = async (req, res) => {
-  try {
-    const dto = new RescheduleAppointmentDTO(req.body, req.params);
+// ============================================================
+export const rescheduleAppointment = asyncHandler(async (req, res) => {
+  const dto = new RescheduleAppointmentDTO(req.body, req.params);
 
-    // 🔵 ONLY CHANGE: pass actor
-    const appointment = await appointmentService.rescheduleAppointment(
-      dto,
-      req.user
-    );
+  const appointment = await appointmentService.rescheduleAppointment(
+    dto,
+    req.user
+  );
 
-    res.status(200).json({ success: true, appointment });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    message: "Appointment rescheduled successfully",
+    data: { appointment },
+  });
+});
 
-// =============================
+// ============================================================
 // CANCEL
-// =============================
-export const cancelAppointment = async (req, res) => {
-  try {
-    const appointmentId = Number(req.params.id);
+// ============================================================
+export const cancelAppointment = asyncHandler(async (req, res) => {
+  const appointmentId = Number(req.params.id);
 
-    // 🔵 ONLY CHANGE: pass actor
-    const appointment = await appointmentService.cancelAppointment(
-      appointmentId,
-      req.user
-    );
+  const appointment = await appointmentService.cancelAppointment(
+    appointmentId,
+    req.user
+  );
 
-    res.status(200).json({ success: true, appointment });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    message: "Appointment cancelled successfully",
+    data: { appointment },
+  });
+});
 
-// =============================
+// ============================================================
 // COMPLETE
-// =============================
-export const completeAppointment = async (req, res) => {
-  try {
-    const appointmentId = Number(req.params.id);
+// ============================================================
+export const completeAppointment = asyncHandler(async (req, res) => {
+  const appointmentId = Number(req.params.id);
 
-    // 🔵 ONLY CHANGE: pass actor
-    const appointment = await appointmentService.completeAppointment(
-      appointmentId,
-      req.user
-    );
+  const appointment = await appointmentService.completeAppointment(
+    appointmentId,
+    req.user
+  );
 
-    res.status(200).json({ success: true, appointment });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    message: "Appointment marked as completed",
+    data: { appointment },
+  });
+});
 
-// =============================
-// LIST BY DATE RANGE
-// =============================
-export const listAppointmentsByDate = async (req, res) => {
-  try {
-    const clinicId = Number(req.query.clinicId);
-    const fromDate = req.query.fromDate;
-    const toDate = req.query.toDate;
+// ============================================================
+// QUERIES
+// ============================================================
+export const listAppointmentsByDate = asyncHandler(async (req, res) => {
+  const clinicId = Number(req.query.clinicId);
+  const fromDate = req.query.fromDate;
+  const toDate = req.query.toDate;
 
-    const appointments = await appointmentService.listAppointmentsByDateRange(
-      clinicId,
-      fromDate,
-      toDate
-    );
+  const appointments = await appointmentService.listAppointmentsByDateRange(
+    clinicId,
+    fromDate,
+    toDate
+  );
 
-    res.status(200).json({ success: true, appointments });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, { data: { appointments } });
+});
 
-// =============================
-// LIST BY PATIENT
-// =============================
-export const listAppointmentsByPatient = async (req, res) => {
-  try {
-    const patientId = Number(req.params.patientId);
+export const listAppointmentsByPatient = asyncHandler(async (req, res) => {
+  const patientId = Number(req.params.patientId);
 
-    const appointments = await appointmentService.listAppointmentsByPatient(
-      patientId
-    );
+  const appointments = await appointmentService.listAppointmentsByPatient(
+    patientId
+  );
 
-    res.status(200).json({ success: true, appointments });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, { data: { appointments } });
+});
 
-// =============================
-// GET APPOINTMENT BY ID
-// =============================
-export const getAppointmentById = async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    const appointment = await appointmentService.getAppointmentById(id);
+export const getAppointmentById = asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
 
-    if (!appointment) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Appointment not found" });
-    }
+  const appointment = await appointmentService.getAppointmentById(id);
 
-    res.status(200).json({ success: true, appointment });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, { data: { appointment } });
+});
 
-export const listAllAppointmentsForDoctor = async (req, res) => {
-  try {
-    const doctorId = Number(req.params.doctorId);
-    const clinicId = Number(req.params.clinicId);
+export const listAllAppointmentsForDoctor = asyncHandler(async (req, res) => {
+  const doctorId = Number(req.params.doctorId);
+  const clinicId = Number(req.params.clinicId);
 
-    const appointments =
-      await appointmentService.listAllAppointmentsByDoctorAndClinic(
-        doctorId,
-        clinicId
-      );
-
-    res.status(200).json({ success: true, appointments });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
-
-export const listTodayAppointments = async (req, res) => {
-  try {
-    const doctorId = Number(req.params.doctorId);
-    const clinicId = Number(req.params.clinicId);
-
-    const appointments = await appointmentService.listTodayAppointments(
+  const appointments =
+    await appointmentService.listAllAppointmentsByDoctorAndClinic(
       doctorId,
       clinicId
     );
 
-    res.status(200).json({ success: true, appointments });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, { data: { appointments } });
+});
+
+export const listTodayAppointments = asyncHandler(async (req, res) => {
+  const doctorId = Number(req.params.doctorId);
+  const clinicId = Number(req.params.clinicId);
+
+  const appointments = await appointmentService.listTodayAppointments(
+    doctorId,
+    clinicId
+  );
+
+  return sendSuccess(res, { data: { appointments } });
+});

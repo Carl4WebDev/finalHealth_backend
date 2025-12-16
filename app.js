@@ -36,6 +36,7 @@ import "./src/modules/audit_compliance/application/subscribers/ClinicAuditSubscr
 import "./src/modules/audit_compliance/application/subscribers/DoctorAuditSubscriber.js";
 import "./src/modules/audit_compliance/application/subscribers/DoctorSessionAuditSubscriber.js";
 import "./src/modules/audit_compliance/application/subscribers/PatientAuditSubscriber.js";
+import "./src/modules/audit_compliance/application/subscribers/AppointmentAuditSubscriber.js";
 
 //subsystem 1 "User & Role Management"
 import userRoutes from "./src/modules/user/interface/routes.js";

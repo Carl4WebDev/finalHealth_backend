@@ -1,3 +1,10 @@
+import AppError from "../../../../core/errors/AppError.js";
+
+import AppointmentCreated from "../../domain/events/appointments/AppointmentCreated.js";
+import AppointmentRescheduled from "../../domain/events/appointments/AppointmentRescheduled.js";
+import AppointmentCancelled from "../../domain/events/appointments/AppointmentCancelled.js";
+import AppointmentCompleted from "../../domain/events/appointments/AppointmentCompleted.js";
+
 export default class AppointmentService {
   constructor(
     appointmentRepo,
@@ -5,66 +12,74 @@ export default class AppointmentService {
     priorityRepo,
     doctorSessionRepo,
     factory,
-    auditService
+    eventBus
   ) {
     this.appointmentRepo = appointmentRepo;
     this.patientRepo = patientRepo;
     this.priorityRepo = priorityRepo;
-    this.doctorSessionRepo = doctorSessionRepo; // <-- IMPORTANT
+    this.doctorSessionRepo = doctorSessionRepo;
     this.factory = factory;
-    this.auditService = auditService; // NEW
+    this.eventBus = eventBus; // ✅ STANDARD
   }
 
   async createAppointment(dto, actor) {
-    // Normalize date
     const appointmentDate = new Date(dto.appointmentDate);
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0);
 
-    // Prevent booking in the past
     if (appointmentDate < currentDate) {
-      throw new Error("Appointment cannot be booked in the past");
+      throw new AppError(
+        "Appointment cannot be booked in the past",
+        400,
+        "INVALID_APPOINTMENT_DATE"
+      );
     }
 
-    // 🚫 Restrict ONLY double-booking of PATIENT
     const patientConflicts = await this.appointmentRepo.checkDoubleBooking(
       dto.patientId,
       dto.appointmentDate
     );
 
     if (patientConflicts.length > 0) {
-      throw new Error("Patient already has an appointment on this date");
+      throw new AppError(
+        "Patient already has an appointment on this date",
+        409,
+        "APPOINTMENT_CONFLICT"
+      );
     }
 
-    // No doctor conflict – doctors can have multiple appointments per day
-
-    // Create appointment
     const appointment = this.factory.createAppointment(dto);
     const saved = await this.appointmentRepo.save(appointment);
 
-    // Audit
-    await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: "APPOINTMENT_CREATED",
-      tableAffected: "appointment",
-      recordId: saved.appointmentId,
-      details: JSON.stringify(dto),
-    });
+    await this.eventBus.publish(
+      new AppointmentCreated({
+        appointmentId: saved.appointmentId,
+        actorId: actor.id,
+        actorRole: actor.role,
+      })
+    );
 
     return saved;
   }
 
   async rescheduleAppointment(dto, actor) {
     const existing = await this.appointmentRepo.findById(dto.appointmentId);
-    if (!existing) throw new Error("Appointment not found");
+    if (!existing) {
+      throw new AppError("Appointment not found", 404, "APPOINTMENT_NOT_FOUND");
+    }
 
     const conflicts = await this.appointmentRepo.checkDoubleBooking(
       existing.patientId,
       dto.appointmentDate
     );
-    if (conflicts.some((a) => a.appointmentId !== existing.appointmentId))
-      throw new Error("Patient already has an appointment on this date");
+
+    if (conflicts.some((a) => a.appointmentId !== existing.appointmentId)) {
+      throw new AppError(
+        "Patient already has an appointment on this date",
+        409,
+        "APPOINTMENT_CONFLICT"
+      );
+    }
 
     const updated = existing
       .toBuilder()
@@ -75,89 +90,83 @@ export default class AppointmentService {
 
     const result = await this.appointmentRepo.update(updated);
 
-    // AUDIT LOG
-    await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: "APPOINTMENT_RESCHEDULED",
-      tableAffected: "appointment",
-      recordId: dto.appointmentId,
-      details: JSON.stringify(dto),
-    });
+    await this.eventBus.publish(
+      new AppointmentRescheduled({
+        appointmentId: dto.appointmentId,
+        actorId: actor.id,
+      })
+    );
 
     return result;
   }
 
   async cancelAppointment(appointmentId, actor) {
     const existing = await this.appointmentRepo.findById(appointmentId);
-    if (!existing) throw new Error("Appointment not found");
+    if (!existing) {
+      throw new AppError("Appointment not found", 404, "APPOINTMENT_NOT_FOUND");
+    }
 
     if (existing.status === "Completed" || existing.status === "Cancelled") {
-      throw new Error(
-        "This appointment cannot be cancelled, as it is already completed or cancelled."
+      throw new AppError(
+        "Appointment cannot be cancelled in its current state",
+        400,
+        "INVALID_APPOINTMENT_STATE"
       );
     }
 
-    existing.status = "Cancelled"; // Update status to cancelled
+    existing.status = "Cancelled";
     const updated = await this.appointmentRepo.update(existing);
 
-    // AUDIT LOG
-    await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: "APPOINTMENT_CANCELLED",
-      tableAffected: "appointment",
-      recordId: appointmentId,
-      details: "Appointment cancelled by user", // No reason
-    });
+    await this.eventBus.publish(
+      new AppointmentCancelled({
+        appointmentId,
+        actorId: actor.id,
+      })
+    );
 
     return updated;
   }
 
   async completeAppointment(appointmentId, actor) {
     const existing = await this.appointmentRepo.findById(appointmentId);
-    if (!existing) throw new Error("Appointment not found");
+    if (!existing) {
+      throw new AppError("Appointment not found", 404, "APPOINTMENT_NOT_FOUND");
+    }
 
     existing.markCompleted();
     const updated = await this.appointmentRepo.update(existing);
 
-    // AUDIT LOG
-    await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: "APPOINTMENT_COMPLETED",
-      tableAffected: "appointment",
-      recordId: appointmentId,
-      details: `Appointment ${appointmentId} marked completed`,
-    });
+    await this.eventBus.publish(
+      new AppointmentCompleted({
+        appointmentId,
+        actorId: actor.id,
+      })
+    );
 
     return updated;
   }
 
   async listAppointmentsByDateRange(clinicId, fromDate, toDate) {
-    return await this.appointmentRepo.findByDateRange(
-      clinicId,
-      fromDate,
-      toDate
-    );
+    return this.appointmentRepo.findByDateRange(clinicId, fromDate, toDate);
   }
 
   async listAppointmentsByPatient(patientId) {
-    return await this.appointmentRepo.findByPatient(patientId);
+    return this.appointmentRepo.findByPatient(patientId);
   }
 
   async getAppointmentById(id) {
-    return await this.appointmentRepo.findById(id);
+    const appointment = await this.appointmentRepo.findById(id);
+    if (!appointment) {
+      throw new AppError("Appointment not found", 404, "APPOINTMENT_NOT_FOUND");
+    }
+    return appointment;
   }
 
   async listAllAppointmentsByDoctorAndClinic(doctorId, clinicId) {
-    return await this.appointmentRepo.findAllByDoctorAndClinic(
-      doctorId,
-      clinicId
-    );
+    return this.appointmentRepo.findAllByDoctorAndClinic(doctorId, clinicId);
   }
 
   async listTodayAppointments(doctorId, clinicId) {
-    return await this.appointmentRepo.findTodayAppointments(doctorId, clinicId);
+    return this.appointmentRepo.findTodayAppointments(doctorId, clinicId);
   }
 }
