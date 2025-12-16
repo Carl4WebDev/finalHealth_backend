@@ -26,7 +26,7 @@ export default class PatientManagementService {
       }
     }
 
-    const patient = this.factory.create(dto);
+    const patient = this.factory.createPatient(dto);
     const saved = await this.patientRepo.save(patient);
 
     await this.eventBus.publish(
@@ -67,7 +67,7 @@ export default class PatientManagementService {
       .setPatientTypeId(dto.patientTypeId ?? existing.patientTypeId)
       .build();
 
-    const saved = await this.patientRepo.update(saved);
+    const saved = await this.patientRepo.update(updated);
 
     await this.eventBus.publish(
       new PatientUpdated({

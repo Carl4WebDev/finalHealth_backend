@@ -6,7 +6,7 @@
  */
 
 import PatientRepo from "../../infrastructure/PatientRepo.js";
-import PatientFactory from "../../domain/factories/PatientFactory.js";
+import AppointmentFactory from "../../domain/factories/AppointmentFactory.js";
 import PatientManagementService from "../../application/services/PatientService.js";
 
 import RegisterPatientDTO from "../http/RegisterPatientDTO.js";
@@ -19,7 +19,7 @@ import eventBus from "../../../../core/events/EventBus.js";
 
 // Wiring
 const patientRepo = new PatientRepo();
-const factory = new PatientFactory();
+const factory = new AppointmentFactory();
 
 const patientService = new PatientManagementService(
   patientRepo,
