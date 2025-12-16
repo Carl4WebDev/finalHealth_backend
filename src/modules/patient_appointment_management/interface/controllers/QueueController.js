@@ -1,60 +1,65 @@
+/**
+ * QUEUE CONTROLLER
+ * - No try/catch
+ * - No audit imports
+ * - asyncHandler only
+ */
+
 import QueueRepository from "../../infrastructure/QueueRepository.js";
 import PriorityRepo from "../../infrastructure/PriorityRepo.js";
 import QueueService from "../../application/services/QueueService.js";
-import AuditRepo from "../../../user/infrastructure/repositories/AuditRepo.js";
-import AuditLogService from "../../../user/application/services/AuditLogService.js";
+
 import AddToQueueDTO from "../http/AddToQueueDTO.js";
 
+import eventBus from "../../../../core/events/EventBus.js";
+import { asyncHandler } from "../../../../core/middleware/asyncHandler.js";
+import { sendSuccess } from "../../../../core/http/apiResponse.js";
+
+// DI
 const queueRepo = new QueueRepository();
 const priorityRepo = new PriorityRepo();
-const auditRepo = new AuditRepo();
-const auditService = new AuditLogService(auditRepo);
 
-const queueService = new QueueService(queueRepo, priorityRepo, auditService);
+const queueService = new QueueService(queueRepo, priorityRepo, eventBus);
 
-// Controller for handling the add to queue request
-export const addToQueue = async (req, res) => {
-  try {
-    // Make sure to validate and format the data correctly in the DTO
-    const dto = new AddToQueueDTO(req.body);
+// ============================================================
+// ADD TO QUEUE
+// ============================================================
+export const addToQueue = asyncHandler(async (req, res) => {
+  const dto = new AddToQueueDTO(req.body);
+  const entry = await queueService.addToQueue(dto, req.user);
 
-    // Perform the action to add the patient to the queue
-    const result = await queueService.addToQueue(dto, req.user);
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Patient added to queue",
+    data: { entry },
+  });
+});
 
-    // Respond with success and the entry information
-    res.status(201).json({ success: true, entry: result });
-  } catch (err) {
-    // Send an error response if something goes wrong
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+// ============================================================
+// GET QUEUE
+// ============================================================
+export const getQueue = asyncHandler(async (req, res) => {
+  const doctorId = Number(req.params.doctorId);
+  const clinicId = Number(req.params.clinicId);
 
-export const getQueue = async (req, res) => {
-  try {
-    const doctorId = Number(req.params.doctorId);
-    const clinicId = Number(req.params.clinicId);
+  const queue = await queueService.listQueue(doctorId, clinicId);
 
-    const result = await queueService.listQueue(doctorId, clinicId);
+  return sendSuccess(res, {
+    data: { queue },
+  });
+});
 
-    res.status(200).json({ success: true, queue: result });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+// ============================================================
+// UPDATE QUEUE STATUS
+// ============================================================
+export const updateQueueStatus = asyncHandler(async (req, res) => {
+  const queueEntryId = Number(req.params.id);
+  const { status } = req.body;
 
-export const updateQueueStatus = async (req, res) => {
-  try {
-    const queueEntryId = Number(req.params.id); // The queue entry ID
-    const { status } = req.body; // The new status (e.g., "In Progress", "Completed")
+  const entry = await queueService.updateStatus(queueEntryId, status, req.user);
 
-    const entry = await queueService.updateStatus(
-      queueEntryId,
-      status,
-      req.user
-    ); // Pass the actor (user) info for audit
-
-    res.status(200).json({ success: true, entry }); // Respond with the updated entry
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message }); // Handle errors
-  }
-};
+  return sendSuccess(res, {
+    message: "Queue status updated",
+    data: { entry },
+  });
+});

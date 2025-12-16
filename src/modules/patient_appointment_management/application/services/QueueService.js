@@ -1,14 +1,17 @@
+import AppError from "../../../../core/errors/AppError.js";
 import QueueEntry from "../../domain/entities/QueueEntry.js";
 
+import QueueAdded from "../../domain/events/queues/QueueAdded.js";
+import QueueStatusUpdated from "../../domain/events/queues/QueueStatusUpdated.js";
+
 export default class QueueService {
-  constructor(queueRepo, priorityRepo, auditService) {
+  constructor(queueRepo, priorityRepo, eventBus) {
     this.queueRepo = queueRepo;
     this.priorityRepo = priorityRepo;
-    this.auditService = auditService;
+    this.eventBus = eventBus;
   }
-  // Service method to add a patient to the queue
+
   async addToQueue(dto, actor) {
-    // Check if the patient is already in the queue for the same doctor and clinic
     const existingQueue =
       await this.queueRepo.findQueueByPatientAndDoctorAndClinic(
         dto.patientId,
@@ -17,21 +20,22 @@ export default class QueueService {
       );
 
     if (existingQueue.length > 0) {
-      throw new Error(
-        "Patient is already in the queue for this doctor and clinic."
+      throw new AppError(
+        "Patient is already in the queue for this doctor and clinic",
+        409,
+        "QUEUE_CONFLICT"
       );
     }
 
-    // Fetch the priority data to validate the priority
     const priority = await this.priorityRepo.findById(dto.priorityId);
     if (!priority) {
-      throw new Error("Invalid priority ID provided.");
+      throw new AppError(
+        "Invalid priority ID provided",
+        400,
+        "INVALID_PRIORITY"
+      );
     }
 
-    // Map the patient priority type from the provided priorityId
-    const priorityLevel = priority.priority_level;
-
-    // Create a new queue entry
     const queueEntry = new QueueEntry.Builder()
       .setPatientId(dto.patientId)
       .setDoctorId(dto.doctorId)
@@ -40,37 +44,37 @@ export default class QueueService {
       .setStatus(dto.status)
       .build();
 
-    // Add the queue entry to the database
     const saved = await this.queueRepo.addToQueue(queueEntry);
 
-    // Log the action in the audit service
-    await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: "QUEUE_ADD",
-      tableAffected: "queue_entries",
-      recordId: saved.queueEntryId,
-      details: JSON.stringify(dto),
-    });
+    await this.eventBus.publish(
+      new QueueAdded({
+        queueEntryId: saved.queueEntryId,
+        actorId: actor.id,
+        actorRole: actor.role,
+      })
+    );
 
     return saved;
   }
 
   async listQueue(doctorId, clinicId) {
-    return await this.queueRepo.listQueue(doctorId, clinicId);
+    return this.queueRepo.listQueue(doctorId, clinicId);
   }
 
   async updateStatus(queueEntryId, status, actor) {
-    const updated = await this.queueRepo.updateStatus(queueEntryId, status); // Update the status in the repository
+    const updated = await this.queueRepo.updateStatus(queueEntryId, status);
 
-    await this.auditService.record({
-      actorId: actor.id, // Actor refers to the user who initiated the action
-      actorType: actor.role, // Role of the actor (e.g., admin, secretary)
-      action: `QUEUE_${status.toUpperCase()}`, // The action type for audit logs
-      tableAffected: "queue_entries", // Table being affected
-      recordId: queueEntryId, // The affected record ID
-      details: status, // The new status being set
-    });
+    if (!updated) {
+      throw new AppError("Queue entry not found", 404, "QUEUE_ENTRY_NOT_FOUND");
+    }
+
+    await this.eventBus.publish(
+      new QueueStatusUpdated({
+        queueEntryId,
+        status,
+        actorId: actor.id,
+      })
+    );
 
     return updated;
   }
