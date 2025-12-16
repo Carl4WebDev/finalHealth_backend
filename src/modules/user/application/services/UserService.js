@@ -5,11 +5,17 @@ import UserProfile from "../../domain/entities/UserProfile.js";
 import AppError from "../../../../core/errors/AppError.js";
 import ValidationError from "../../../../core/errors/ValidationError.js";
 
+import UserRegistered from "../../domain/events/user/UserRegistered.js";
+import UserLoggedIn from "../../domain/events/user/UserLoggedIn.js";
+import UserLoginFailed from "../../domain/events/user/UserLoginFailed.js";
+import UserPasswordChanged from "../../domain/events/user/UserPasswordChanged.js";
+import UserProfileImageUpdated from "../../domain/events/user/UserProfileImageUpdated.js";
+
 export default class UserService {
-  constructor(userRepo, auditRepo, authTokenService) {
+  constructor(userRepo, authTokenService, eventBus) {
     this.userRepo = userRepo;
-    this.auditRepo = auditRepo;
     this.authTokenService = authTokenService;
+    this.eventBus = eventBus;
   }
 
   // ============================================================
@@ -18,21 +24,15 @@ export default class UserService {
   async register(dto) {
     const { email, password } = dto;
 
-    // Validate payload
     if (!email || !password) {
       throw new ValidationError("Email and password are required", {
         missingFields: ["email", "password"],
       });
     }
 
-    // Check if email already exists
     const exists = await this.userRepo.findByEmail(email);
     if (exists) {
-      throw new AppError(
-        "Email already exists",
-        409, // Conflict
-        "EMAIL_EXISTS"
-      );
+      throw new AppError("Email already exists", 409, "EMAIL_EXISTS");
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -57,15 +57,13 @@ export default class UserService {
 
     await this.userRepo.createUserProfile(profileEntity);
 
-    // Audit (optional)
-    if (this.auditRepo?.logAuth) {
-      await this.auditRepo.logAuth(
-        createdUser.userId,
-        "USER",
-        "REGISTER",
-        `User registered with email ${createdUser.email}`
-      );
-    }
+    // ✅ EMIT EVENT
+    await this.eventBus.publish(
+      new UserRegistered({
+        userId: createdUser.userId,
+        email: createdUser.email,
+      })
+    );
 
     return createdUser;
   }
@@ -83,53 +81,44 @@ export default class UserService {
     const user = await this.userRepo.findByEmail(email);
 
     if (!user) {
-      await this.auditRepo.logAuth(
-        null,
-        "USER",
-        "FAILED_LOGIN",
-        `Email not found: ${email}`
+      await this.eventBus.publish(
+        new UserLoginFailed({
+          email,
+          reason: "EMAIL_NOT_FOUND",
+        })
       );
-
       throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
-      await this.auditRepo.logAuth(
-        user.userId,
-        "USER",
-        "FAILED_LOGIN",
-        "Wrong password"
+      await this.eventBus.publish(
+        new UserLoginFailed({
+          email,
+          reason: "WRONG_PASSWORD",
+        })
       );
-
       throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
 
     if (!user.isActive()) {
-      await this.auditRepo.logAuth(
-        user.userId,
-        "USER",
-        "FAILED_LOGIN",
-        "Inactive account"
+      await this.eventBus.publish(
+        new UserLoginFailed({
+          email,
+          reason: "ACCOUNT_INACTIVE",
+        })
       );
-
       throw new AppError("Account is inactive", 403, "ACCOUNT_INACTIVE");
     }
 
-    const tokenPayload = {
+    const token = this.authTokenService.generateToken({
       userId: user.userId,
       email: user.email,
       role: "USER",
-    };
+    });
 
-    const token = this.authTokenService.generateToken(tokenPayload);
-
-    await this.auditRepo.logAuth(
-      user.userId,
-      "USER",
-      "LOGIN_SUCCESS",
-      "User logged in"
-    );
+    // ✅ EMIT EVENT
+    await this.eventBus.publish(new UserLoggedIn({ userId: user.userId }));
 
     return { token, user };
   }
@@ -181,40 +170,25 @@ export default class UserService {
     const user = result.user;
     const userProfile = result.userProfile;
 
-    // ------------------------------------------------------------
-    // PASSWORD UPDATE
-    // ------------------------------------------------------------
+    // PASSWORD CHANGE
     if (currentPassword || newPassword) {
       if (!currentPassword || !newPassword) {
-        throw new ValidationError(
-          "Both current and new password are required",
-          { missingFields: ["currentPassword", "newPassword"] }
-        );
+        throw new ValidationError("Both current and new password are required");
       }
 
       const valid = await bcrypt.compare(currentPassword, user.password);
       if (!valid) {
-        throw new AppError(
-          "Current password is incorrect",
-          400,
-          "WRONG_CURRENT_PASSWORD"
-        );
+        throw new AppError("Current password is incorrect", 400);
       }
 
       const newHash = await bcrypt.hash(newPassword, 10);
       await this.userRepo.updatePassword(userId, newHash);
 
-      await this.auditRepo.logAuth(
-        userId,
-        "USER",
-        "CHANGE_PASSWORD",
-        "User changed password"
-      );
+      // ✅ EMIT EVENT
+      await this.eventBus.publish(new UserPasswordChanged({ userId }));
     }
 
-    // ------------------------------------------------------------
     // PROFILE IMAGE UPDATE
-    // ------------------------------------------------------------
     if (profileImgPath) {
       const updatedProfile = userProfile
         .toBuilder()
@@ -223,13 +197,13 @@ export default class UserService {
 
       await this.userRepo.updateProfileImage(updatedProfile);
 
-      await this.auditRepo.logAction({
-        actorId: userId,
-        actorType: "USER",
-        action: "UPDATE_PROFILE_IMAGE",
-        tableAffected: "user_profile",
-        details: "User updated profile picture",
-      });
+      // ✅ EMIT EVENT
+      await this.eventBus.publish(
+        new UserProfileImageUpdated({
+          userId,
+          imagePath: profileImgPath,
+        })
+      );
     }
 
     return { success: true, userId };

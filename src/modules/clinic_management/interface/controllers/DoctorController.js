@@ -6,23 +6,18 @@ import DoctorManagementService from "../../application/services/DoctorManagement
 
 import RegisterDoctorDTO from "../http/dtos/RegisterDoctorDTO.js";
 
-// AUDIT
-import AuditRepo from "../../../user/infrastructure/repositories/AuditRepo.js";
-import AuditLogService from "../../../user/application/services/AuditLogService.js";
+import eventBus from "../../../../core/events/EventBus.js";
 
 // Instantiate dependencies
 const doctorRepo = new DoctorRepo();
 const clinicRepo = new ClinicRepo();
 const factory = new DoctorFactory();
 
-const auditRepo = new AuditRepo();
-const auditService = new AuditLogService(auditRepo);
-
 const doctorService = new DoctorManagementService(
   doctorRepo,
   clinicRepo,
   factory,
-  auditService
+  eventBus
 );
 
 export const registerDoctor = async (req, res) => {

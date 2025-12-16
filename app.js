@@ -30,6 +30,12 @@ uploadDirs.forEach((dir) => {
 import notFoundHandler from "./src/core/middleware/notFoundHandler.js";
 import errorHandler from "./src/core/middleware/errorHandler.js";
 
+import "./src/modules/audit_compliance/application/subscribers/AuditSubscriber.js";
+import "./src/modules/audit_compliance/application/subscribers/AdminAuditSubscriber.js";
+import "./src/modules/audit_compliance/application/subscribers/ClinicAuditSubscriber.js";
+import "./src/modules/audit_compliance/application/subscribers/DoctorAuditSubscriber.js";
+import "./src/modules/audit_compliance/application/subscribers/DoctorSessionAuditSubscriber.js";
+
 //subsystem 1 "User & Role Management"
 import userRoutes from "./src/modules/user/interface/routes.js";
 app.use("/api/users", userRoutes);

@@ -1,84 +1,92 @@
+/**
+ * PATIENT CONTROLLER
+ * - No try/catch
+ * - asyncHandler only
+ * - Orchestration only
+ */
+
 import PatientRepo from "../../infrastructure/PatientRepo.js";
-import AppointmentFactory from "../../domain/factories/AppointmentFactory.js";
-import PatientService from "../../application/services/PatientService.js";
+import PatientFactory from "../../domain/factories/PatientFactory.js";
+import PatientManagementService from "../../application/services/PatientService.js";
 
 import RegisterPatientDTO from "../http/RegisterPatientDTO.js";
+import UpdatePatientDTO from "../http/UpdatePatientDTO.js";
 
-// AUDIT
-import AuditRepo from "../../../user/infrastructure/repositories/AuditRepo.js";
-import AuditLogService from "../../../user/application/services/AuditLogService.js";
+import { asyncHandler } from "../../../../core/middleware/asyncHandler.js";
+import { sendSuccess } from "../../../../core/http/apiResponse.js";
 
+import eventBus from "../../../../core/events/EventBus.js";
+
+// Wiring
 const patientRepo = new PatientRepo();
-const factory = new AppointmentFactory();
+const factory = new PatientFactory();
 
-const auditRepo = new AuditRepo();
-const auditService = new AuditLogService(auditRepo);
+const patientService = new PatientManagementService(
+  patientRepo,
+  factory,
+  eventBus
+);
 
-const patientService = new PatientService(patientRepo, factory, auditService);
-
-// =============================
+// ============================================================
 // REGISTER PATIENT
-// =============================
-export const registerPatient = async (req, res) => {
-  try {
-    const dto = new RegisterPatientDTO(req.body);
+// ============================================================
+export const registerPatient = asyncHandler(async (req, res) => {
+  const dto = new RegisterPatientDTO(req.body);
+  const patient = await patientService.registerPatient(dto, req.user);
 
-    const patient = await patientService.registerPatient(dto, req.user);
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Patient registered successfully",
+    data: { patient },
+  });
+});
 
-    res.status(201).json({ success: true, patient });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+// ============================================================
+// UPDATE PATIENT
+// ============================================================
+export const updatePatient = asyncHandler(async (req, res) => {
+  const patientId = Number(req.params.id);
+  const dto = new UpdatePatientDTO(req.body);
 
-// =============================
+  const patient = await patientService.updatePatient(patientId, dto, req.user);
+
+  return sendSuccess(res, {
+    message: "Patient updated successfully",
+    data: { patient },
+  });
+});
+
+// ============================================================
 // GET PATIENT BY ID
-// =============================
-export const getPatientById = async (req, res) => {
-  try {
-    const patientId = Number(req.params.id);
-    const patient = await patientService.getPatientById(patientId);
+// ============================================================
+export const getPatientById = asyncHandler(async (req, res) => {
+  const patientId = Number(req.params.id);
+  const patient = await patientService.getPatientById(patientId);
 
-    if (!patient) {
-      return res.status(404).json({
-        success: false,
-        error: "Patient not found",
-      });
-    }
+  return sendSuccess(res, {
+    data: { patient },
+  });
+});
 
-    res.status(200).json({ success: true, patient });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
-
-// =============================
+// ============================================================
 // SEARCH PATIENTS
-// =============================
-export const searchPatients = async (req, res) => {
-  try {
-    const term = req.query.q || "";
-    const patients = await patientService.searchPatients(term);
+// ============================================================
+export const searchPatients = asyncHandler(async (req, res) => {
+  const term = req.query.q || "";
+  const patients = await patientService.searchPatients(term);
 
-    res.status(200).json({ success: true, patients });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    data: { patients },
+  });
+});
 
-export const getAllPatients = async (req, res) => {
-  try {
-    const patients = await patientService.getAllPatients(); // Fetch all patients using the PatientService
+// ============================================================
+// GET ALL PATIENTS
+// ============================================================
+export const getAllPatients = asyncHandler(async (req, res) => {
+  const patients = await patientService.getAllPatients();
 
-    if (!patients || patients.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: "No patients found.",
-      });
-    }
-
-    res.status(200).json({ success: true, patients });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    data: { patients },
+  });
+});

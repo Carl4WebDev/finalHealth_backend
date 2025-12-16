@@ -5,75 +5,82 @@ import DoctorSessionService from "../../application/services/DoctorSessionServic
 import DoctorSessionDTO from "../http/dtos/DoctorSessionDTO.js";
 import EditDoctorScheduleDTO from "../http/dtos/EditDoctorScheduleDTO.js";
 
-// AUDIT
-import AuditRepo from "../../../user/infrastructure/repositories/AuditRepo.js";
-import AuditLogService from "../../../user/application/services/AuditLogService.js";
+import { asyncHandler } from "../../../../core/middleware/asyncHandler.js";
+import { sendSuccess } from "../../../../core/http/apiResponse.js";
 
-// Instantiate dependencies
+import eventBus from "../../../../core/events/EventBus.js";
+
+// ============================================================
+// DEPENDENCY WIRING
+// ============================================================
 const sessionRepo = new DoctorSessionRepo();
 const factory = new DoctorFactory();
-const auditRepo = new AuditRepo();
-const auditService = new AuditLogService(auditRepo);
+const sessionService = new DoctorSessionService(sessionRepo, factory, eventBus);
 
-const sessionService = new DoctorSessionService(
-  sessionRepo,
-  factory,
-  auditService
-);
+// ============================================================
+// SET AVAILABILITY
+// ============================================================
+export const setAvailability = asyncHandler(async (req, res) => {
+  const dto = new DoctorSessionDTO(req.body);
+  const session = await sessionService.setAvailabilityWindow(dto, req.user);
 
-export const setAvailability = async (req, res) => {
-  try {
-    const dto = new DoctorSessionDTO(req.body);
-    const session = await sessionService.setAvailabilityWindow(dto, req.user);
-    res.status(201).json({ success: true, session });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Doctor availability set",
+    data: { session },
+  });
+});
 
-export const editSchedule = async (req, res) => {
-  try {
-    const dto = new EditDoctorScheduleDTO(req.body);
-    dto.sessionId = Number(req.params.id);
+// ============================================================
+// EDIT SCHEDULE
+// ============================================================
+export const editSchedule = asyncHandler(async (req, res) => {
+  const dto = new EditDoctorScheduleDTO({
+    ...req.body,
+    sessionId: Number(req.params.id),
+  });
+  console.log("SESSION ID:", dto.sessionId);
 
-    const updated = await sessionService.editSchedule(dto, req.user);
+  const updated = await sessionService.editSchedule(dto, req.user);
 
-    res.status(200).json({ success: true, updated });
-  } catch (err) {
-    console.log("here error");
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    message: "Doctor schedule updated",
+    data: { updated },
+  });
+});
 
-export const deleteSchedule = async (req, res) => {
-  try {
-    const id = Number(req.params.id);
+// ============================================================
+// DELETE SCHEDULE
+// ============================================================
+export const deleteSchedule = asyncHandler(async (req, res) => {
+  await sessionService.deleteSchedule(Number(req.params.id), req.user);
 
-    await sessionService.deleteSchedule(id, req.user);
+  return sendSuccess(res, {
+    message: "Doctor schedule deleted",
+  });
+});
 
-    res.status(200).json({ success: true });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+// ============================================================
+// GET DOCTOR SESSIONS
+// ============================================================
+export const getDoctorSessions = asyncHandler(async (req, res) => {
+  const sessions = await sessionService.getDoctorSessions(
+    Number(req.params.doctorId)
+  );
 
-export const getDoctorSessions = async (req, res) => {
-  try {
-    const sessions = await sessionService.getDoctorSessions(
-      Number(req.params.doctorId)
-    );
-    res.status(200).json({ success: true, sessions });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    data: { sessions },
+  });
+});
 
-export const checkConflicts = async (req, res) => {
-  try {
-    const dto = new DoctorSessionDTO(req.body);
-    const conflicts = await sessionService.checkConflicts(dto);
-    res.status(200).json({ success: true, conflicts });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+// ============================================================
+// CHECK CONFLICTS
+// ============================================================
+export const checkConflicts = asyncHandler(async (req, res) => {
+  const dto = new DoctorSessionDTO(req.body);
+  const conflicts = await sessionService.checkConflicts(dto);
+
+  return sendSuccess(res, {
+    data: { conflicts },
+  });
+});

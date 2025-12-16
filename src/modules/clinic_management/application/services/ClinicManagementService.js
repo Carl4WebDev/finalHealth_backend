@@ -1,86 +1,112 @@
+import AppError from "../../../../core/errors/AppError.js";
+import ValidationError from "../../../../core/errors/ValidationError.js";
+
+import ClinicRegistered from "../../domain/events/clinics/ClinicRegistered.js";
+import ClinicApproved from "../../domain/events/clinics/ClinicApproved.js";
+import ClinicRejected from "../../domain/events/clinics/ClinicRejected.js";
+
 export default class ClinicManagementService {
-  constructor(clinicRepo, factory, auditService) {
+  constructor(clinicRepo, factory, eventBus) {
     this.clinicRepo = clinicRepo;
     this.factory = factory;
-    this.auditService = auditService; // NEW
+    this.eventBus = eventBus;
   }
 
+  // ============================================================
+  // REGISTER CLINIC
+  // ============================================================
   async registerClinic(dto, actor) {
+    if (!actor?.id || !actor?.role) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
     const clinic = this.factory.createClinic(dto);
     const saved = await this.clinicRepo.save(clinic);
 
-    // AUDIT LOG — REQ040
-    await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: "CLINIC_REGISTERED",
-      tableAffected: "clinic",
-      recordId: saved.clinicId,
-      details: JSON.stringify(dto),
-    });
+    await this.eventBus.publish(
+      new ClinicRegistered({
+        clinicId: saved.clinicId,
+        actorId: actor.id,
+        actorRole: actor.role,
+      })
+    );
 
     return saved;
   }
 
-  async submitForVerification(clinicId, actor) {
-    const updated = await this.clinicRepo.updateVerificationStatus(
-      clinicId,
-      "Pending"
-    );
+  // ============================================================
+  // APPROVE CLINIC
+  // ============================================================
+  async approveClinic(clinicId, actor) {
+    if (!clinicId) {
+      throw new ValidationError("Clinic ID is required");
+    }
 
-    // AUDIT LOG — REQ040
-    await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: "CLINIC_SUBMITTED_FOR_VERIFICATION",
-      tableAffected: "clinic",
-      recordId: clinicId,
-      details: `Clinic submitted for review`,
-    });
+    if (actor.role !== "ADMIN") {
+      throw new AppError("Forbidden", 403, "FORBIDDEN");
+    }
 
-    return updated;
-  }
-
-  async approveClinic(clinicId, admin) {
     const updated = await this.clinicRepo.updateVerificationStatus(
       clinicId,
       "Approved"
     );
 
-    // AUDIT LOG — REQ040
-    await this.auditService.record({
-      actorId: admin.adminId || admin.id,
-      actorType: "ADMIN",
-      action: "CLINIC_APPROVED",
-      tableAffected: "clinic",
-      recordId: clinicId,
-      details: `Clinic approved by admin`,
-    });
+    if (!updated) {
+      throw new AppError("Clinic not found", 404, "CLINIC_NOT_FOUND");
+    }
+    console.log("ACTOR IN SERVICE:", actor);
+
+    await this.eventBus.publish(
+      new ClinicApproved({
+        clinicId,
+        actorId: actor.id,
+      })
+    );
 
     return updated;
   }
 
+  // ============================================================
+  // REJECT CLINIC
+  // ============================================================
   async rejectClinic(clinicId, admin, reason) {
+    if (!reason) {
+      throw new ValidationError("Rejection reason is required");
+    }
+
+    if (admin.role !== "ADMIN") {
+      throw new AppError("Forbidden", 403, "FORBIDDEN");
+    }
+
     const updated = await this.clinicRepo.updateVerificationStatus(
       clinicId,
       "Rejected"
     );
 
-    // AUDIT LOG — REQ040
-    await this.auditService.record({
-      actorId: admin.adminId || admin.id,
-      actorType: "ADMIN",
-      action: "CLINIC_REJECTED",
-      tableAffected: "clinic",
-      recordId: clinicId,
-      details: reason,
-    });
+    if (!updated) {
+      throw new AppError("Clinic not found", 404, "CLINIC_NOT_FOUND");
+    }
+
+    await this.eventBus.publish(
+      new ClinicRejected({
+        clinicId,
+        adminId: admin.adminId || admin.id,
+        reason,
+      })
+    );
 
     return updated;
   }
 
+  // ============================================================
+  // QUERIES
+  // ============================================================
   async getClinicById(clinicId) {
-    return await this.clinicRepo.findById(clinicId);
+    const clinic = await this.clinicRepo.findById(clinicId);
+    if (!clinic) {
+      throw new AppError("Clinic not found", 404, "CLINIC_NOT_FOUND");
+    }
+    return clinic;
   }
 
   async getPendingClinics() {

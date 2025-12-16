@@ -95,6 +95,8 @@ export default class DoctorSessionRepo extends IDoctorSessionRepository {
   }
 
   _toEntity(row) {
+    if (!row) return null;
+
     return new DoctorSession.Builder()
       .setSessionId(row.session_id)
       .setDoctorId(row.doctor_id)
@@ -102,7 +104,6 @@ export default class DoctorSessionRepo extends IDoctorSessionRepository {
       .setDayOfWeek(row.day_of_week)
       .setStartTime(row.start_time)
       .setEndTime(row.end_time)
-      .setCreatedAt(row.created_at)
       .build();
   }
 }

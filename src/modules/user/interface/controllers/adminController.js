@@ -8,7 +8,6 @@
  */
 
 import AdminRepo from "../../infrastructure/repositories/AdminRepo.js";
-import AuditRepo from "../../infrastructure/repositories/AuditRepo.js";
 import AuthTokenService from "../../../../core/middleware/AuthTokenService.js";
 import AdminService from "../../application/services/AdminService.js";
 
@@ -19,11 +18,12 @@ import AdminResponseDTO from "../http/dtos/AdminResponseDTO.js";
 import { sendSuccess } from "../../../../core/http/apiResponse.js";
 import { asyncHandler } from "../../../../core/middleware/asyncHandler.js";
 
+import eventBus from "../../../../core/events/EventBus.js";
+
 const adminRepo = new AdminRepo();
-const auditRepo = new AuditRepo();
 const authTokenService = new AuthTokenService();
 
-const adminService = new AdminService(adminRepo, auditRepo, authTokenService);
+const adminService = new AdminService(adminRepo, authTokenService, eventBus);
 
 // ============================================================
 // REGISTER ADMIN
@@ -43,6 +43,7 @@ export const register = asyncHandler(async (req, res) => {
 // LOGIN ADMIN
 // ============================================================
 export const login = asyncHandler(async (req, res) => {
+  console.log(req.user);
   const dto = new LoginAdminDTO(req.body);
   const { token, admin } = await adminService.login(dto);
 

@@ -1,14 +1,25 @@
-import DoctorSession from "../../domain/entities/DoctorSession.js";
+import AppError from "../../../../core/errors/AppError.js";
+import ValidationError from "../../../../core/errors/ValidationError.js";
+
+import DoctorSessionCreated from "../../domain/events/doctor_sessions/DoctorSessionCreated.js";
+import DoctorSessionUpdated from "../../domain/events/doctor_sessions/DoctorSessionUpdated.js";
+import DoctorSessionDeleted from "../../domain/events/doctor_sessions/DoctorSessionDeleted.js";
 
 export default class DoctorSessionService {
-  constructor(sessionRepo, factory, auditService) {
+  constructor(sessionRepo, factory, eventBus) {
     this.sessionRepo = sessionRepo;
     this.factory = factory;
-    this.auditService = auditService; // NEW
+    this.eventBus = eventBus;
   }
 
+  // ============================================================
+  // CREATE SESSION
+  // ============================================================
   async setAvailabilityWindow(dto, actor) {
-    // conflict check
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
     const conflicts = await this.sessionRepo.findConflicts(
       dto.doctorId,
       dto.clinicId,
@@ -17,71 +28,86 @@ export default class DoctorSessionService {
       dto.endTime
     );
 
-    if (conflicts.length > 0) throw new Error("Schedule conflict detected");
+    if (conflicts.length > 0) {
+      throw new AppError(
+        "Schedule conflict detected",
+        409,
+        "SCHEDULE_CONFLICT"
+      );
+    }
 
     const session = this.factory.createSession(dto);
     const saved = await this.sessionRepo.save(session);
 
-    // AUDIT LOG — REQ040
-    await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: "DOCTOR_SESSION_CREATED",
-      tableAffected: "doctor_session",
-      recordId: saved.sessionId,
-      details: JSON.stringify(dto),
-    });
+    await this.eventBus.publish(
+      new DoctorSessionCreated({
+        sessionId: saved.sessionId,
+        actorId: actor.id,
+      })
+    );
 
     return saved;
   }
 
+  // ============================================================
+  // UPDATE SESSION
+  // ============================================================
   async editSchedule(dto, actor) {
-    const session = new DoctorSession.Builder()
-      .setSessionId(dto.sessionId)
-      .setDoctorId(dto.doctorId)
-      .setClinicId(dto.clinicId)
-      .setDayOfWeek(dto.dayOfWeek)
-      .setStartTime(dto.startTime)
-      .setEndTime(dto.endTime)
-      .build();
+    if (!dto.sessionId) {
+      throw new ValidationError("Session ID is required");
+    }
 
-    const updated = await this.sessionRepo.update(session);
+    const updated = await this.sessionRepo.update(
+      this.factory.createSession(dto)
+    );
 
-    // AUDIT LOG
-    await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: "DOCTOR_SESSION_UPDATED",
-      tableAffected: "doctor_session",
-      recordId: dto.sessionId,
-      details: JSON.stringify(dto),
-    });
+    if (!updated) {
+      throw new AppError("Session not found", 404, "SESSION_NOT_FOUND");
+    }
+
+    await this.eventBus.publish(
+      new DoctorSessionUpdated({
+        sessionId: dto.sessionId,
+        actorId: actor.id,
+      })
+    );
 
     return updated;
   }
 
+  // ============================================================
+  // DELETE SESSION
+  // ============================================================
   async deleteSchedule(sessionId, actor) {
+    if (!sessionId) {
+      throw new ValidationError("Session ID is required");
+    }
+
     await this.sessionRepo.delete(sessionId);
 
-    // AUDIT LOG
-    await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: "DOCTOR_SESSION_DELETED",
-      tableAffected: "doctor_session",
-      recordId: sessionId,
-      details: `Deleted doctor session ${sessionId}`,
-    });
+    await this.eventBus.publish(
+      new DoctorSessionDeleted({
+        sessionId,
+        actorId: actor.id,
+      })
+    );
 
     return true;
   }
 
+  // ============================================================
+  // QUERIES
+  // ============================================================
   async getDoctorSessions(doctorId) {
-    return await this.sessionRepo.findByDoctor(doctorId);
+    if (!doctorId) {
+      throw new ValidationError("Doctor ID is required");
+    }
+
+    return this.sessionRepo.findByDoctor(doctorId);
   }
 
   async checkConflicts(dto) {
-    return await this.sessionRepo.findConflicts(
+    return this.sessionRepo.findConflicts(
       dto.doctorId,
       dto.clinicId,
       dto.dayOfWeek,

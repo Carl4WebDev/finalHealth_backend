@@ -6,25 +6,28 @@ import {
   getClinicById,
   getPendingClinics,
   getAllClinics,
-  getUnassignedClinics,
 } from "../controllers/ClinicController.js";
+
+import authMiddleware from "../../../../core/middleware/Auth.js";
+import { requireAdmin } from "../../../../core/middleware/requireAdmin.js";
 
 const router = express.Router();
 
-import authMiddleware from "../../../../core/middleware/Auth.js";
-
-router.get("/all-clinics", authMiddleware, getAllClinics);
-
-router.get("/unassigned/:doctorId", authMiddleware, getUnassignedClinics);
-//working
+// USER
 router.post("/", authMiddleware, registerClinic);
-//working
-router.post("/:id/approve", approveClinic);
-//working
-router.post("/:id/reject", rejectClinic);
-//working
-router.get("/clinics/:id", getClinicById);
-//working
-router.get("/clinics/pending/all", getPendingClinics);
+
+// ADMIN
+router.post("/clinic/:id/approve", authMiddleware, requireAdmin, approveClinic);
+router.post("/clinic/:id/reject", authMiddleware, requireAdmin, rejectClinic);
+router.get(
+  "/clinics/pending/all",
+  authMiddleware,
+  requireAdmin,
+  getPendingClinics
+);
+
+// READ
+router.get("/all-clinics", authMiddleware, getAllClinics);
+router.get("/clinics/:id", authMiddleware, getClinicById);
 
 export default router;

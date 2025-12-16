@@ -1,75 +1,31 @@
+import InputGuard from "../../../../../core/security/InputGuard.js";
 import ValidationError from "../../../../../core/errors/ValidationError.js";
 
 export default class RegisterUserDTO {
   constructor(payload = {}) {
-    const {
-      email,
-      password,
-      fName,
-      mName,
-      lName,
-      contactNum,
-      address,
-      birthDate,
-    } = payload;
-
-    // STRICT WHITELIST
-    this.email = email;
-    this.password = password;
-    this.fName = fName;
-    this.mName = mName;
-    this.lName = lName;
-    this.contactNum = contactNum;
-    this.address = address;
-    this.birthDate = birthDate;
-
+    Object.assign(this, payload);
     this.validate();
   }
 
-  // ------------------------------------------------------------
-  // INTERNAL HELPERS
-  // ------------------------------------------------------------
-  containsHtml(value) {
-    // Detect HTML tags or script-like patterns
-    return /<[^>]*>/g.test(value);
-  }
-
-  validatePlainText(fieldName, value) {
-    if (value && this.containsHtml(value)) {
-      throw new ValidationError(`${fieldName} contains invalid characters`);
-    }
-  }
-
-  // ------------------------------------------------------------
-  // VALIDATION
-  // ------------------------------------------------------------
   validate() {
-    if (!this.email) throw new ValidationError("Email required");
-    if (!this.password) throw new ValidationError("Password required");
-    if (!this.fName) throw new ValidationError("First name required");
-    if (!this.lName) throw new ValidationError("Last name required");
+    InputGuard.assertRequired("Email", this.email);
+    InputGuard.assertRequired("Password", this.password);
+    InputGuard.assertRequired("First name", this.fName);
+    InputGuard.assertRequired("Last name", this.lName);
 
-    if (this.email.length > 255) throw new ValidationError("Email too long");
+    InputGuard.assertPlainText("First name", this.fName);
+    InputGuard.assertPlainText("Middle name", this.mName);
+    InputGuard.assertPlainText("Last name", this.lName);
+    InputGuard.assertPlainText("Address", this.address);
+    InputGuard.assertPlainText("Contact number", this.contactNum);
 
-    if (this.password.length < 6 || this.password.length > 128)
-      throw new ValidationError("Password must be 6–128 characters");
+    InputGuard.assertMaxLength("Email", this.email, 255);
+    InputGuard.assertMaxLength("First name", this.fName, 100);
+    InputGuard.assertMaxLength("Last name", this.lName, 100);
+    InputGuard.assertMaxLength("Address", this.address, 255);
 
-    if (this.fName.length > 100 || this.lName.length > 100)
-      throw new ValidationError("Name too long");
-
-    if (this.address && this.address.length > 255)
-      throw new ValidationError("Address too long");
-
-    if (this.contactNum && this.contactNum.length > 20)
-      throw new ValidationError("Contact number too long");
-
-    // ----------------------------------------------------------
-    // SCRIPT / HTML REJECTION (CRITICAL)
-    // ----------------------------------------------------------
-    this.validatePlainText("First name", this.fName);
-    this.validatePlainText("Middle name", this.mName);
-    this.validatePlainText("Last name", this.lName);
-    this.validatePlainText("Address", this.address);
-    this.validatePlainText("Contact number", this.contactNum);
+    if (this.password.length < 8 || this.password.length > 255) {
+      throw new ValidationError("Password must be 8–255 characters");
+    }
   }
 }

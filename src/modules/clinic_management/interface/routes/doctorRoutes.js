@@ -11,15 +11,20 @@ import {
 const router = express.Router();
 
 import authMiddleware from "../../../../core/middleware/Auth.js";
+import { requireUser } from "../../../../core/middleware/requireUser.js";
+import { requireAdmin } from "../../../../core/middleware/requireAdmin.js";
 
-//working
-router.post("/", authMiddleware, registerDoctor);
-//working
-router.post("/:id/approve", approveDoctor);
-//working
-router.post("/:id/reject", rejectDoctor);
-//working
-router.post("/assign-clinic", authMiddleware, assignDoctorToClinic);
+router.post("/", authMiddleware, requireUser, registerDoctor);
+
+router.post(
+  "/assign-clinic",
+  authMiddleware,
+  requireUser,
+  assignDoctorToClinic
+);
+
+router.post("/doctor/:id/approve", authMiddleware, requireAdmin, approveDoctor);
+router.post("/doctor/:id/reject", authMiddleware, requireAdmin, rejectDoctor);
 
 router.get("/doctors", authMiddleware, getDoctors);
 router.get("/doctors/:doctorId/clinics", authMiddleware, getClinicsOfDoctor);

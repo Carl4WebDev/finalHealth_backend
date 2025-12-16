@@ -3,11 +3,15 @@ import Admin from "../../domain/entities/Admin.js";
 import AppError from "../../../../core/errors/AppError.js";
 import ValidationError from "../../../../core/errors/ValidationError.js";
 
+import AdminLoggedIn from "../../domain/events/admin/AdminLoggedIn.js";
+import AdminLoginFailed from "../../domain/events/admin/AdminLoginFailed.js";
+import AdminRegistered from "../../domain/events/admin/AdminRegistered.js";
+
 export default class AdminService {
-  constructor(adminRepo, auditRepo, authTokenService) {
+  constructor(adminRepo, authTokenService, eventBus) {
     this.adminRepo = adminRepo;
-    this.auditRepo = auditRepo;
     this.authTokenService = authTokenService;
+    this.eventBus = eventBus;
   }
 
   // ============================================================
@@ -43,14 +47,12 @@ export default class AdminService {
 
     const createdAdmin = await this.adminRepo.createAdmin(adminEntity);
 
-    if (this.auditRepo?.logAuth) {
-      await this.auditRepo.logAuth(
-        createdAdmin.adminId,
-        "ADMIN",
-        "REGISTER",
-        `Admin registered: ${createdAdmin.email}`
-      );
-    }
+    await this.eventBus.publish(
+      new AdminRegistered({
+        adminId: createdAdmin.adminId,
+        email: createdAdmin.email,
+      })
+    );
 
     return createdAdmin;
   }
@@ -66,16 +68,39 @@ export default class AdminService {
     }
 
     const admin = await this.adminRepo.findByEmail(email);
+
+    // ❌ admin not found
     if (!admin) {
+      await this.eventBus.publish(
+        new AdminLoginFailed({
+          email,
+          reason: "EMAIL_NOT_FOUND",
+        })
+      );
       throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
 
     const valid = await bcrypt.compare(password, admin.password);
+
+    // ❌ wrong password
     if (!valid) {
+      await this.eventBus.publish(
+        new AdminLoginFailed({
+          email,
+          reason: "WRONG_PASSWORD",
+        })
+      );
       throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
 
+    // ❌ inactive account
     if (!admin.isActive()) {
+      await this.eventBus.publish(
+        new AdminLoginFailed({
+          email,
+          reason: "ADMIN_INACTIVE",
+        })
+      );
       throw new AppError("Admin account is inactive", 403, "ADMIN_INACTIVE");
     }
 
@@ -87,11 +112,11 @@ export default class AdminService {
 
     const token = this.authTokenService.generateToken(tokenPayload);
 
-    await this.auditRepo.logAuth(
-      admin.adminId,
-      "ADMIN",
-      "LOGIN_SUCCESS",
-      "Admin logged in"
+    // ✅ SUCCESS EVENT
+    await this.eventBus.publish(
+      new AdminLoggedIn({
+        adminId: admin.adminId,
+      })
     );
 
     return { token, admin };

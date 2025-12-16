@@ -1,105 +1,103 @@
+/**
+ * CLINIC CONTROLLER (GLOBAL ERROR HANDLING)
+ *
+ * - No try/catch
+ * - Errors bubble via asyncHandler → errorHandler
+ * - Controllers orchestrate only
+ */
+
 import ClinicRepo from "../../infrastructure/ClinicRepo.js";
 import DoctorFactory from "../../domain/factories/DoctorFactory.js";
 import ClinicManagementService from "../../application/services/ClinicManagementService.js";
 
 import RegisterClinicDTO from "../http/dtos/RegisterClinicDTO.js";
 
-import AuditRepo from "../../../user/infrastructure/repositories/AuditRepo.js";
-import AuditLogService from "../../../user/application/services/AuditLogService.js";
+import { asyncHandler } from "../../../../core/middleware/asyncHandler.js";
+import { sendSuccess } from "../../../../core/http/apiResponse.js";
 
-// Instantiate repos
+import eventBus from "../../../../core/events/EventBus.js";
+
+// Wiring
 const clinicRepo = new ClinicRepo();
 const factory = new DoctorFactory();
-const auditRepo = new AuditRepo();
-const auditService = new AuditLogService(auditRepo);
 
-// Pass auditService into the service
 const clinicService = new ClinicManagementService(
   clinicRepo,
   factory,
-  auditService
+  eventBus
 );
 
-export const registerClinic = async (req, res) => {
-  try {
-    const dto = new RegisterClinicDTO(req.body);
+// ============================================================
+// REGISTER CLINIC
+// ============================================================
+export const registerClinic = asyncHandler(async (req, res) => {
+  const dto = new RegisterClinicDTO(req.body);
+  const clinic = await clinicService.registerClinic(dto, req.user);
 
-    // Pass actor into service
-    const clinic = await clinicService.registerClinic(dto, req.user);
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Clinic registered successfully",
+    data: { clinic },
+  });
+});
 
-    res.status(201).json({ success: true, clinic });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+// ============================================================
+// APPROVE CLINIC
+// ============================================================
+export const approveClinic = asyncHandler(async (req, res) => {
+  const clinicId = Number(req.params.id);
 
-export const approveClinic = async (req, res) => {
-  try {
-    const clinicId = Number(req.params.id);
+  await clinicService.approveClinic(clinicId, req.user);
 
-    await clinicService.approveClinic(clinicId, req.user);
+  return sendSuccess(res, {
+    message: "Clinic approved",
+  });
+});
 
-    res.status(200).json({ success: true });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+// ============================================================
+// REJECT CLINIC
+// ============================================================
+export const rejectClinic = asyncHandler(async (req, res) => {
+  const clinicId = Number(req.params.id);
+  const { reason } = req.body;
 
-export const rejectClinic = async (req, res) => {
-  try {
-    const clinicId = Number(req.params.id);
+  await clinicService.rejectClinic(clinicId, req.user, reason);
 
-    await clinicService.rejectClinic(clinicId, req.user, req.body.reason);
+  return sendSuccess(res, {
+    message: "Clinic rejected",
+  });
+});
 
-    res.status(200).json({ success: true });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+// ============================================================
+// GET CLINIC BY ID
+// ============================================================
+export const getClinicById = asyncHandler(async (req, res) => {
+  const clinicId = Number(req.params.id);
+  const clinic = await clinicService.getClinicById(clinicId);
 
-export const getClinicById = async (req, res) => {
-  try {
-    const clinicId = Number(req.params.id);
-    const clinic = await clinicService.getClinicById(clinicId);
+  return sendSuccess(res, {
+    data: { clinic },
+  });
+});
 
-    if (!clinic)
-      return res
-        .status(404)
-        .json({ success: false, error: "Clinic not found" });
+// ============================================================
+// GET PENDING CLINICS
+// ============================================================
+export const getPendingClinics = asyncHandler(async (req, res) => {
+  const clinics = await clinicService.getPendingClinics();
 
-    res.status(200).json({ success: true, clinic });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    data: { clinics },
+  });
+});
 
-export const getPendingClinics = async (req, res) => {
-  try {
-    const clinics = await clinicService.getPendingClinics();
-    res.status(200).json({ success: true, clinics });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+// ============================================================
+// GET ALL CLINICS (READ-ONLY)
+// ============================================================
+export const getAllClinics = asyncHandler(async (req, res) => {
+  const clinics = await clinicRepo.getAllClinics();
 
-export const getAllClinics = async (req, res) => {
-  try {
-    const clinics = await clinicRepo.getAllClinics();
-    res.status(200).json({ success: true, clinics });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
-
-export const getUnassignedClinics = async (req, res) => {
-  try {
-    const doctorId = req.params.doctorId;
-
-    const clinics = await clinicRepo.findUnassignedClinics(doctorId);
-
-    return res.json({ success: true, clinics });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false, error: "Server error" });
-  }
-};
+  return sendSuccess(res, {
+    data: { clinics },
+  });
+});

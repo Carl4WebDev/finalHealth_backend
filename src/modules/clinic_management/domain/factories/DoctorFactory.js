@@ -33,6 +33,7 @@ export default class DoctorFactory {
 
   createSession(dto) {
     return new DoctorSession.Builder()
+      .setSessionId(dto.sessionId)
       .setDoctorId(dto.doctorId)
       .setClinicId(dto.clinicId)
       .setDayOfWeek(dto.dayOfWeek)

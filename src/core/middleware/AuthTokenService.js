@@ -1,9 +1,15 @@
 import jwt from "jsonwebtoken";
 
 export default class AuthTokenService {
-  generateToken(user) {
+  generateToken(payload) {
+    console.log("DECODED TOKEN from service:", payload);
     return jwt.sign(
-      { id: user.userId, role: user.role },
+      {
+        userId: payload.userId,
+        adminId: payload.adminId,
+        email: payload.email,
+        role: payload.role,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );

@@ -1,55 +1,57 @@
-export default class PatientService {
-  constructor(patientRepo, factory, auditService) {
+import AppError from "../../../../core/errors/AppError.js";
+import ValidationError from "../../../../core/errors/ValidationError.js";
+
+import PatientRegistered from "../../domain/events/patients/PatientRegistered.js";
+import PatientUpdated from "../../domain/events/patients/PatientUpdated.js";
+
+export default class PatientManagementService {
+  constructor(patientRepo, factory, eventBus) {
     this.patientRepo = patientRepo;
     this.factory = factory;
-    this.auditService = auditService; // NEW
+    this.eventBus = eventBus;
   }
 
+  // ============================================================
+  // REGISTER PATIENT
+  // ============================================================
   async registerPatient(dto, actor) {
-    // Check if the patient already exists based on email or contact number
-    const existingPatient = await this.patientRepo.findByEmail(dto.email);
-    if (existingPatient) {
-      throw new Error(
-        "A patient with this email or contact number already exists."
-      );
+    if (!actor?.id || !actor?.role) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     }
 
-    // Proceed to create the patient if no existing record is found
-    const patient = this.factory.createPatient(dto);
+    if (dto.email) {
+      const exists = await this.patientRepo.findByEmail(dto.email);
+      if (exists) {
+        throw new AppError("Patient already exists", 409, "PATIENT_EXISTS");
+      }
+    }
+
+    const patient = this.factory.create(dto);
     const saved = await this.patientRepo.save(patient);
 
-    // AUDIT LOG
-    await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: "PATIENT_REGISTERED",
-      tableAffected: "patient",
-      recordId: saved.patientId,
-      details: JSON.stringify(dto),
-    });
+    await this.eventBus.publish(
+      new PatientRegistered({
+        patientId: saved.patientId,
+        actorId: actor.id,
+        actorRole: actor.role,
+      })
+    );
 
     return saved;
   }
 
-  async getPatientById(id) {
-    return await this.patientRepo.findById(id);
-  }
-
-  async searchPatients(term) {
-    return await this.patientRepo.findBySearch(term);
-  }
-  async getAllPatients() {
-    try {
-      const patients = await this.patientRepo.getAll(); // Fetch all patients from the repository
-      return patients;
-    } catch (err) {
-      throw new Error("Error while fetching all patients: " + err.message);
+  // ============================================================
+  // UPDATE PATIENT
+  // ============================================================
+  async updatePatient(patientId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     }
-  }
 
-  async updatePatient(dto, actor) {
-    const existing = await this.patientRepo.findById(dto.patientId);
-    if (!existing) throw new Error("Patient not found");
+    const existing = await this.patientRepo.findById(patientId);
+    if (!existing) {
+      throw new AppError("Patient not found", 404, "PATIENT_NOT_FOUND");
+    }
 
     const updated = existing
       .toBuilder()
@@ -65,18 +67,34 @@ export default class PatientService {
       .setPatientTypeId(dto.patientTypeId ?? existing.patientTypeId)
       .build();
 
-    const saved = await this.patientRepo.update(updated);
+    const saved = await this.patientRepo.update(saved);
 
-    // AUDIT LOG
-    await this.auditService.record({
-      actorId: actor.id,
-      actorType: actor.role,
-      action: "PATIENT_UPDATED",
-      tableAffected: "patient",
-      recordId: dto.patientId,
-      details: JSON.stringify(dto),
-    });
+    await this.eventBus.publish(
+      new PatientUpdated({
+        patientId: saved.patientId,
+        actorId: actor.id,
+      })
+    );
 
     return saved;
+  }
+
+  // ============================================================
+  // QUERIES
+  // ============================================================
+  async getPatientById(patientId) {
+    const patient = await this.patientRepo.findById(patientId);
+    if (!patient) {
+      throw new AppError("Patient not found", 404, "PATIENT_NOT_FOUND");
+    }
+    return patient;
+  }
+
+  async searchPatients(term) {
+    return this.patientRepo.search(term);
+  }
+
+  async getAllPatients() {
+    return this.patientRepo.getAll();
   }
 }

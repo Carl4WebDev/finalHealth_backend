@@ -37,7 +37,6 @@
  */
 
 import UserRepo from "../../infrastructure/repositories/UserRepo.js";
-import AuditRepo from "../../../audit_compliance/infrastructure/repositories/AuditRepo.js";
 import AuthTokenService from "../../../../core/middleware/AuthTokenService.js";
 import UserService from "../../application/services/UserService.js";
 
@@ -48,11 +47,12 @@ import ChangePasswordDTO from "../http/dtos/ChangePasswordDTO.js";
 import { sendSuccess } from "../../../../core/http/apiResponse.js";
 import { asyncHandler } from "../../../../core/middleware/asyncHandler.js";
 
+import eventBus from "../../../../core/events/EventBus.js";
+
 // Wiring dependencies
 const userRepo = new UserRepo();
-const auditRepo = new AuditRepo();
 const authTokenService = new AuthTokenService();
-const userService = new UserService(userRepo, auditRepo, authTokenService);
+const userService = new UserService(userRepo, authTokenService, eventBus);
 
 // =============================================================
 // REGISTER USER
