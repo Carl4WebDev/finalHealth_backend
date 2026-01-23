@@ -58,21 +58,33 @@ export const getMyActiveSubscription = async (req, res) => {
     const userId = req.user?.user_id || req.user?.id;
     if (!userId) throw new Error("Authenticated user required");
 
-    const active = await userSubRepo.findActiveByUser(userId);
+    const sub = await userSubRepo.findActiveByUser(userId);
 
-    if (!active) {
+    if (!sub) {
       return res.status(200).json({
         success: true,
+        hasSubscription: false,
         subscription: null,
         plan: null,
       });
     }
 
-    const plan = await planRepo.findById(active.planId);
+    const plan = await planRepo.findById(sub.planId);
+    if (!plan) throw new Error("Plan not found");
+
+    // 🔥 derive expiration safely
+    const today = new Date().toISOString().slice(0, 10);
+    const isExpired = sub.endDate < today;
+
+    const effectiveStatus = isExpired ? "expired" : sub.status;
 
     res.status(200).json({
       success: true,
-      subscription: active,
+      hasSubscription: true,
+      subscription: {
+        ...sub,
+        status: effectiveStatus,
+      },
       plan,
     });
   } catch (err) {

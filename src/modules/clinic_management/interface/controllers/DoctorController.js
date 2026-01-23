@@ -6,6 +6,9 @@ import DoctorManagementService from "../../application/services/DoctorManagement
 
 import RegisterDoctorDTO from "../http/dtos/RegisterDoctorDTO.js";
 
+import { asyncHandler } from "../../../../core/middleware/asyncHandler.js";
+import { sendSuccess } from "../../../../core/http/apiResponse.js";
+
 import eventBus from "../../../../core/events/EventBus.js";
 
 // Instantiate dependencies
@@ -98,3 +101,68 @@ export const getClinicsOfDoctor = async (req, res) => {
     });
   }
 };
+
+// ============================================================
+// New & Planned api calls
+// ============================================================
+export const getAllApprovedDoctorsOfUser = async (req, res) => {
+  try {
+    const doctors = await doctorService.getAllApprovedDoctorsOfUser(
+      req.user.id
+    );
+    res.status(200).json({
+      success: true,
+      data: doctors,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+export const getAllDoctorsOfUser = async (req, res) => {
+  try {
+    const doctors = await doctorService.getAllDoctorsOfUser(req.user.id);
+    res.status(200).json({
+      success: true,
+      data: doctors,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+
+export const getAllInfoOfDoctor = async (req, res) => {
+  try {
+    const doctorId = req.params.doctorId;
+
+    const doctors = await doctorService.getAllInfoOfDoctor(
+      doctorId,
+      req.user.id
+    );
+    res.status(200).json({
+      success: true,
+      data: doctors,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+
+export const updateDoctorInfo = asyncHandler(async (req, res) => {
+  const sessions = await doctorService.updateDoctorInfo(
+    Number(req.params.doctorId),
+    req.body
+  );
+
+  return sendSuccess(res, {
+    data: { sessions },
+  });
+});

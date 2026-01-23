@@ -15,12 +15,12 @@ export default class DoctorSessionService {
   // ============================================================
   // CREATE SESSION
   // ============================================================
-  async setAvailabilityWindow(dto, actor) {
+  async createDoctorSession(dto, actor) {
     if (!actor?.id) {
       throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     }
 
-    const conflicts = await this.sessionRepo.findConflicts(
+    const conflicts = await this.sessionRepo.createDoctorSession(
       dto.doctorId,
       dto.clinicId,
       dto.dayOfWeek,
@@ -78,12 +78,12 @@ export default class DoctorSessionService {
   // ============================================================
   // DELETE SESSION
   // ============================================================
-  async deleteSchedule(sessionId, actor) {
+  async deleteSession(sessionId, actor) {
     if (!sessionId) {
       throw new ValidationError("Session ID is required");
     }
 
-    await this.sessionRepo.delete(sessionId);
+    await this.sessionRepo.deleteSession(sessionId);
 
     await this.eventBus.publish(
       new DoctorSessionDeleted({
@@ -98,12 +98,12 @@ export default class DoctorSessionService {
   // ============================================================
   // QUERIES
   // ============================================================
-  async getDoctorSessions(doctorId) {
+  async getAllDoctorSessions(doctorId) {
     if (!doctorId) {
       throw new ValidationError("Doctor ID is required");
     }
 
-    return this.sessionRepo.findByDoctor(doctorId);
+    return this.sessionRepo.getAllDoctorSessions(doctorId);
   }
 
   async checkConflicts(dto) {
@@ -114,5 +114,13 @@ export default class DoctorSessionService {
       dto.startTime,
       dto.endTime
     );
+  }
+
+  // ============================================================
+  // New & Updated APIs
+  // ============================================================
+
+  async getDoctorScheduleInClinic(doctorId, clinicId) {
+    return this.sessionRepo.getDoctorScheduleInClinic(doctorId, clinicId);
   }
 }

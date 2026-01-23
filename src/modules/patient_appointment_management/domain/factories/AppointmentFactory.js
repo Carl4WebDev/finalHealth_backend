@@ -13,7 +13,7 @@ export default class AppointmentFactory {
       .setBackupContact(dto.backupContact)
       .setEmail(dto.email)
       .setAddress(dto.address)
-      .setPatientTypeId(dto.patientTypeId)
+      .setPatientTypeId(dto.priorityId)
       .build();
   }
 

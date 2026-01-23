@@ -1,12 +1,16 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import stripeWebhookRouter from "./src/modules/subscription_billing/interface/routes/webhook.js";
 
 dotenv.config();
 const app = express();
 
+app.use("/api/webhooks", stripeWebhookRouter);
+
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 import fs from "fs";
 import path from "path";
@@ -96,20 +100,26 @@ app.use("/api/medical-record-routes", medicalRecordRoutes);
 import medicalRecordDocumentRoutes from "./src/modules/medical_records_management/interface/routes/medicalRecordDocumentRoutes.js";
 app.use("/api/medical-record-document-routes", medicalRecordDocumentRoutes);
 
+import medRoutes from "./src/modules/medical_records_management/interface/routes/medRoutes.js";
+app.use("/api/med-routes", medRoutes);
+
 //subsystem 5 "Notification subsystem"
 import notificationRoutes from "./src/modules/notification/interface/routes/notificationRoutes.js";
 app.use("/api/notification-routes", notificationRoutes);
 
 //subsystem 6 "Subscription & Billing Subsystem"
 import subscriptoinRoutes from "./src/modules/subscription_billing/interface/routes/subscriptionRoutes.js";
+import intentRoutes from "./src/modules/subscription_billing/interface/routes/intent.js";
+
+app.use("/api/subscription-routes-v2", intentRoutes);
+
 app.use("/api/subscription-routes", subscriptoinRoutes);
 
-// Serve profile images
+// ✅ SERVE ALL UPLOADS HERE
 app.use(
-  "/uploads/profile",
-  express.static(path.join(process.cwd(), "uploads/profile"))
+  "/uploads",
+  express.static(path.join(process.cwd(), "src/core/uploads")),
 );
-
 // 404 handler – after all routes
 app.use(notFoundHandler);
 
@@ -117,5 +127,5 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
-  console.log(`🚀 FinalHealth backend running on port ${PORT}`)
+  console.log(`🚀 FinalHealth backend running on port ${PORT}`),
 );

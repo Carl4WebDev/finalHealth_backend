@@ -20,9 +20,9 @@ const sessionService = new DoctorSessionService(sessionRepo, factory, eventBus);
 // ============================================================
 // SET AVAILABILITY
 // ============================================================
-export const setAvailability = asyncHandler(async (req, res) => {
+export const createDoctorSession = asyncHandler(async (req, res) => {
   const dto = new DoctorSessionDTO(req.body);
-  const session = await sessionService.setAvailabilityWindow(dto, req.user);
+  const session = await sessionService.createDoctorSession(dto, req.user);
 
   return sendSuccess(res, {
     statusCode: 201,
@@ -39,7 +39,6 @@ export const editSchedule = asyncHandler(async (req, res) => {
     ...req.body,
     sessionId: Number(req.params.id),
   });
-  console.log("SESSION ID:", dto.sessionId);
 
   const updated = await sessionService.editSchedule(dto, req.user);
 
@@ -52,8 +51,8 @@ export const editSchedule = asyncHandler(async (req, res) => {
 // ============================================================
 // DELETE SCHEDULE
 // ============================================================
-export const deleteSchedule = asyncHandler(async (req, res) => {
-  await sessionService.deleteSchedule(Number(req.params.id), req.user);
+export const deleteSession = asyncHandler(async (req, res) => {
+  await sessionService.deleteSession(Number(req.params.sessionId), req.user);
 
   return sendSuccess(res, {
     message: "Doctor schedule deleted",
@@ -63,8 +62,8 @@ export const deleteSchedule = asyncHandler(async (req, res) => {
 // ============================================================
 // GET DOCTOR SESSIONS
 // ============================================================
-export const getDoctorSessions = asyncHandler(async (req, res) => {
-  const sessions = await sessionService.getDoctorSessions(
+export const getAllDoctorSessions = asyncHandler(async (req, res) => {
+  const sessions = await sessionService.getAllDoctorSessions(
     Number(req.params.doctorId)
   );
 
@@ -82,5 +81,22 @@ export const checkConflicts = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, {
     data: { conflicts },
+  });
+});
+
+// ============================================================
+// New & Updated APIs
+// ============================================================
+export const getDoctorScheduleInClinic = asyncHandler(async (req, res) => {
+  const doctorId = Number(req.params.doctorId);
+  const clinicId = Number(req.params.clinicId);
+
+  const sessions = await sessionService.getDoctorScheduleInClinic(
+    doctorId,
+    clinicId
+  );
+
+  return sendSuccess(res, {
+    data: { sessions },
   });
 });

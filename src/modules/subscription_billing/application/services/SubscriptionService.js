@@ -13,20 +13,43 @@ export default class SubscriptionService {
     const plan = await this.planRepo.findById(dto.planId);
     if (!plan) throw new Error("Plan not found");
 
+    // 🔥 IMPORTANT: check existing active subscription
+    const existing = await this.subscriptionRepo.findActiveByUser(dto.userId);
+
     const strategy = getBillingStrategy(plan.planType);
-    const startDate = dto.startDate || new Date().toISOString().slice(0, 10);
+    const startDate = new Date().toISOString().slice(0, 10);
     const endDate = strategy.calculateEndDate(startDate);
 
-    const subEntity = new UserSubscription.Builder()
-      .setUserId(dto.userId)
-      .setPlanId(plan.planId)
-      .setStartDate(startDate)
-      .setEndDate(endDate)
-      .setAutoRenew(dto.autoRenew)
-      .setStatus("active")
-      .build();
+    let subscription;
 
-    const subscription = await this.subscriptionRepo.save(subEntity);
+    if (existing) {
+      // 🔁 Upgrade / re-subscribe
+      subscription = existing
+        .toBuilder()
+        .setPlanId(plan.planId)
+        .setStartDate(startDate)
+        .setEndDate(endDate)
+        .setAutoRenew(dto.autoRenew)
+        .setStatus("active")
+        .build();
+
+      subscription = await this.subscriptionRepo.update(
+        subscription.subscriptionId,
+        subscription
+      );
+    } else {
+      // 🆕 First-time subscription
+      const subEntity = new UserSubscription.Builder()
+        .setUserId(dto.userId)
+        .setPlanId(plan.planId)
+        .setStartDate(startDate)
+        .setEndDate(endDate)
+        .setAutoRenew(dto.autoRenew)
+        .setStatus("active")
+        .build();
+
+      subscription = await this.subscriptionRepo.save(subEntity);
+    }
 
     const payment = await this.paymentService.processInitialPayment({
       subscription,

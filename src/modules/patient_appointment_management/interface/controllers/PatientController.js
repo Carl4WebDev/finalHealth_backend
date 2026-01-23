@@ -30,9 +30,10 @@ const patientService = new PatientManagementService(
 // ============================================================
 // REGISTER PATIENT
 // ============================================================
-export const registerPatient = asyncHandler(async (req, res) => {
+export const createPatient = asyncHandler(async (req, res) => {
   const dto = new RegisterPatientDTO(req.body);
-  const patient = await patientService.registerPatient(dto, req.user);
+
+  const patient = await patientService.createPatient(dto, req.user);
 
   return sendSuccess(res, {
     statusCode: 201,
@@ -44,15 +45,31 @@ export const registerPatient = asyncHandler(async (req, res) => {
 // ============================================================
 // UPDATE PATIENT
 // ============================================================
-export const updatePatient = asyncHandler(async (req, res) => {
-  const patientId = Number(req.params.id);
-  const dto = new UpdatePatientDTO(req.body);
+// export const updatePatient = asyncHandler(async (req, res) => {
+//   const patientId = Number(req.params.id);
+//   const dto = new UpdatePatientDTO(req.body);
 
-  const patient = await patientService.updatePatient(patientId, dto, req.user);
+//   const patient = await patientService.updatePatient(patientId, dto, req.user);
+
+//   return sendSuccess(res, {
+//     message: "Patient updated successfully",
+//     data: { patient },
+//   });
+// });
+// controllers/patientController.js
+export const updatePatient = asyncHandler(async (req, res) => {
+  const { patientId } = req.params;
+
+  const updatedPatient = await patientService.updatePatient(
+    patientId,
+    req.body,
+    req.user
+  );
 
   return sendSuccess(res, {
+    statusCode: 200,
     message: "Patient updated successfully",
-    data: { patient },
+    data: { patient: updatedPatient },
   });
 });
 
@@ -83,8 +100,14 @@ export const searchPatients = asyncHandler(async (req, res) => {
 // ============================================================
 // GET ALL PATIENTS
 // ============================================================
-export const getAllPatients = asyncHandler(async (req, res) => {
-  const patients = await patientService.getAllPatients();
+export const getPatientOfDoctorInClinic = asyncHandler(async (req, res) => {
+  const doctorId = Number(req.params.doctorId);
+  const clinicId = Number(req.params.clinicId);
+
+  const patients = await patientService.getPatientOfDoctorInClinic(
+    doctorId,
+    clinicId
+  );
 
   return sendSuccess(res, {
     data: { patients },

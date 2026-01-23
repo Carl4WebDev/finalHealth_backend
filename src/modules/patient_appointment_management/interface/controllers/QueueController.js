@@ -38,14 +38,18 @@ export const addToQueue = asyncHandler(async (req, res) => {
 // ============================================================
 // GET QUEUE
 // ============================================================
-export const getQueue = asyncHandler(async (req, res) => {
+export const getQueueOfDoctorInClinic = asyncHandler(async (req, res) => {
   const doctorId = Number(req.params.doctorId);
   const clinicId = Number(req.params.clinicId);
 
-  const queue = await queueService.listQueue(doctorId, clinicId);
+  const { normalQueue, priorityQueue } =
+    await queueService.getQueueOfDoctorInClinic(doctorId, clinicId);
 
   return sendSuccess(res, {
-    data: { queue },
+    data: {
+      normalQueue,
+      priorityQueue,
+    },
   });
 });
 
@@ -53,7 +57,7 @@ export const getQueue = asyncHandler(async (req, res) => {
 // UPDATE QUEUE STATUS
 // ============================================================
 export const updateQueueStatus = asyncHandler(async (req, res) => {
-  const queueEntryId = Number(req.params.id);
+  const queueEntryId = Number(req.params.queueId);
   const { status } = req.body;
 
   const entry = await queueService.updateStatus(queueEntryId, status, req.user);

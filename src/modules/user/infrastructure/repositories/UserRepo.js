@@ -44,10 +44,7 @@ export default class UserRepo extends IUserRepository {
     user.birthDate = row.birth_date || null;
 
     // Build image URL safely
-    const base = BASE_API || "http://localhost:5000";
-    user.profileImgUrl = row.profile_img_path
-      ? `${base}/uploads/profile/${row.profile_img_path}`
-      : null;
+    user.profileImgPath = row.profile_img_path || null;
 
     return user; // RETURN SAME TYPE AS BEFORE
   }
@@ -98,7 +95,7 @@ export default class UserRepo extends IUserRepository {
   // Update the user profile with new details
   async updateProfile(
     userId,
-    { fName, mName, lName, contactNum, address, birthDate }
+    { fName, mName, lName, contactNum, address, birthDate },
   ) {
     const query = `
       UPDATE user_profile

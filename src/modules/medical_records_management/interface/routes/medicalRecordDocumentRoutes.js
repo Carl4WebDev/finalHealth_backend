@@ -1,4 +1,5 @@
 import express from "express";
+const router = express.Router();
 import {
   createRecordDocument,
   updateRecordDocument,
@@ -6,14 +7,25 @@ import {
   listDocumentsByRecord,
 } from "../controllers/MedicalRecordDocumentController.js";
 
-const router = express.Router();
+import { uploadMedicalRecordDocument } from "../../../../core/middleware/uploadMedicalRecordDocs.js";
+import { requireUser } from "../../../../core/middleware/requireUser.js";
+import authMiddleware from "../../../../core/middleware/Auth.js";
 
-router.post("/", createRecordDocument);
+/**
+ * Upload image for a medical record
+ * POST /record/:recordId/upload
+ */
+router.post(
+  "/record/:recordId/upload",
+  authMiddleware,
+  requireUser,
+  uploadMedicalRecordDocument.single("image"),
+  createRecordDocument,
+);
+
+// Existing routes
 router.put("/:id", updateRecordDocument);
-
-// specific first
 router.get("/record/:recordId", listDocumentsByRecord);
-
 router.get("/:id", getRecordDocumentById);
 
 export default router;

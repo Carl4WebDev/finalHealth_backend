@@ -12,53 +12,62 @@ import {
   getAppointmentById,
   listAllAppointmentsForDoctor,
   listTodayAppointments,
+  getAllAppointmentsOfDoctorInClinic,
 } from "../controllers/AppointmentController.js";
 
 // Importing authMiddleware
-import authMiddleware from "../../../../core/middleware/Auth.js"; // Correct path to the middleware
+import authMiddleware from "../../../../core/middleware/Auth.js";
+import requireActiveSubscription from "../../../../core/middleware/RequireActiveSubscription.js";
+
 import { requireUser } from "../../../../core/middleware/requireUser.js";
 const router = express.Router();
 
 router.get("/doctor/:doctorId/clinic/:clinicId/today", listTodayAppointments);
 
 router.get("/appointment/:id", getAppointmentById);
-router.get("/", listAppointmentsByDate);
+// router.get("/", listAppointmentsByDate);
 
-router.post("/", authMiddleware, requireUser, createAppointment);
+router.post(
+  "/",
+  authMiddleware,
+  // requireActiveSubscription,
+  requireUser,
+  createAppointment,
+);
 
 router.put(
   "/appointment/:id/reschedule",
   authMiddleware,
   requireUser,
-  rescheduleAppointment
+  rescheduleAppointment,
 );
 
 router.put(
   "/appointment/:id/cancel",
   authMiddleware,
   requireUser,
-  cancelAppointment
+  cancelAppointment,
 );
 
 router.put(
   "/appointment/:id/complete",
   authMiddleware,
   requireUser,
-  completeAppointment
+  completeAppointment,
 );
 
 router.get(
   "/patient/:patientId",
   authMiddleware,
   requireUser,
-  listAppointmentsByPatient
+  listAppointmentsByPatient,
 );
 
 router.get(
   "/doctor/:doctorId/clinic/:clinicId",
   authMiddleware,
   requireUser,
-  listAllAppointmentsForDoctor
+  listAllAppointmentsForDoctor,
 );
 
 // Route to update the appointment status
@@ -100,4 +109,13 @@ router.put("/appointment/:appointmentId/status", async (req, res) => {
   }
 });
 
+// ============================================================
+// New & Planned api calls
+// ============================================================
+router.get(
+  "/doctor/:doctorId/clinic/:clinicId/appointments",
+  authMiddleware,
+  requireUser,
+  getAllAppointmentsOfDoctorInClinic,
+);
 export default router;

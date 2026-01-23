@@ -7,7 +7,7 @@ export default class AddToQueueDTO {
     this.doctorId = Number(body.doctorId);
     this.clinicId = Number(body.clinicId);
     this.priorityId = Number(body.priorityId);
-    this.status = body.status || "Waiting";
+    this.status = body.status || "waiting";
 
     this.validate();
   }

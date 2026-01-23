@@ -1,10 +1,11 @@
 import express from "express";
 import {
-  registerPatient,
   updatePatient,
   getPatientById,
-  searchPatients,
-  getAllPatients,
+  // searchPatients,
+  getPatientOfDoctorInClinic,
+  createPatient,
+  // getInformationsOfPatient,
 } from "../controllers/PatientController.js";
 
 import authMiddleware from "../../../../core/middleware/Auth.js";
@@ -12,13 +13,24 @@ import { requireUser } from "../../../../core/middleware/requireUser.js";
 
 const router = express.Router();
 
-// WRITE
-router.post("/", authMiddleware, requireUser, registerPatient);
-router.put("/patient/:id", authMiddleware, requireUser, updatePatient);
+router.post("/", authMiddleware, requireUser, createPatient);
 
-// READ
-router.get("/", authMiddleware, searchPatients);
-router.get("/all", authMiddleware, getAllPatients);
+router.get(
+  "/doctor/:doctorId/clinic/:clinicId/patients",
+  authMiddleware,
+  requireUser,
+  getPatientOfDoctorInClinic,
+);
+
+// router.get(
+//   "/doctor/:doctorId/clinic/:clinicId/patients",
+//   authMiddleware,
+//   requireUser,
+//   getInformationsOfPatient
+// );
+
 router.get("/patient/:id", authMiddleware, getPatientById);
+
+router.put("/:patientId/patient", authMiddleware, requireUser, updatePatient);
 
 export default router;

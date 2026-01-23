@@ -23,7 +23,7 @@ export default class DoctorManagementService {
     }
 
     const doctor = this.factory.createDoctor(dto);
-    const saved = await this.doctorRepo.save(doctor);
+    const saved = await this.doctorRepo.save(doctor, actor.id);
 
     await this.eventBus.publish(
       new DoctorRegistered({
@@ -123,5 +123,22 @@ export default class DoctorManagementService {
 
   async getClinicsOfDoctor(doctorId) {
     return this.clinicRepo.findClinicsByDoctor(doctorId);
+  }
+
+  // ============================================================
+  // New & Planned api calls
+  // ============================================================
+
+  async getAllApprovedDoctorsOfUser(userId) {
+    return this.doctorRepo.getAllApprovedDoctorsOfUser(userId);
+  }
+  async getAllDoctorsOfUser(userId) {
+    return this.doctorRepo.getAllDoctorsOfUser(userId);
+  }
+  async getAllInfoOfDoctor(doctorId, userId) {
+    return this.doctorRepo.getAllInfoOfDoctor(doctorId, userId);
+  }
+  async updateDoctorInfo(doctorId, doctorData) {
+    return this.doctorRepo.updateDoctorInfo(doctorId, doctorData);
   }
 }

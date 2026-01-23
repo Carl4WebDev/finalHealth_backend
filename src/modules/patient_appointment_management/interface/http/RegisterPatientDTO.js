@@ -12,7 +12,9 @@ export default class RegisterPatientDTO {
     this.backupContact = body.backupContact;
     this.email = body.email;
     this.address = body.address;
-    this.patientTypeId = Number(body.patientTypeId);
+    this.priorityId = Number(body.priorityId);
+    this.doctorId = Number(body.doctorId);
+    this.clinicId = Number(body.clinicId);
 
     this.validate();
   }
@@ -21,7 +23,7 @@ export default class RegisterPatientDTO {
     InputGuard.assertRequired("First name", this.fName);
     InputGuard.assertRequired("Last name", this.lName);
     InputGuard.assertRequired("Contact number", this.contactNumber);
-    InputGuard.assertRequired("Patient type", this.patientTypeId);
+    InputGuard.assertRequired("Patient type", this.priorityId);
 
     InputGuard.assertPlainText("First name", this.fName);
     InputGuard.assertPlainText("Last name", this.lName);

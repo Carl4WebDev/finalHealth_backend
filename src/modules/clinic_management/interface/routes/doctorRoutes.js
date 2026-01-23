@@ -4,8 +4,12 @@ import {
   approveDoctor,
   rejectDoctor,
   assignDoctorToClinic,
-  getDoctors,
+  // getDoctors,
   getClinicsOfDoctor,
+  getAllApprovedDoctorsOfUser,
+  getAllDoctorsOfUser,
+  getAllInfoOfDoctor,
+  updateDoctorInfo,
 } from "../controllers/DoctorController.js";
 
 const router = express.Router();
@@ -26,7 +30,26 @@ router.post(
 router.post("/doctor/:id/approve", authMiddleware, requireAdmin, approveDoctor);
 router.post("/doctor/:id/reject", authMiddleware, requireAdmin, rejectDoctor);
 
-router.get("/doctors", authMiddleware, getDoctors);
+// router.get("/doctors", authMiddleware, getDoctors);
 router.get("/doctors/:doctorId/clinics", authMiddleware, getClinicsOfDoctor);
 
+// ============================================================
+// New & Planned api calls
+// ============================================================
+
+router.get("/", authMiddleware, requireUser, getAllApprovedDoctorsOfUser);
+router.get("/doctors", authMiddleware, requireUser, getAllDoctorsOfUser);
+router.get(
+  "/doctor-informations/:doctorId",
+  authMiddleware,
+  requireUser,
+  getAllInfoOfDoctor
+);
+
+router.put(
+  "/doctor/:doctorId/information",
+  authMiddleware,
+  requireUser,
+  updateDoctorInfo
+);
 export default router;

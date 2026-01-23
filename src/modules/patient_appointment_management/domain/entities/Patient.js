@@ -10,7 +10,7 @@ export default class Patient {
     this.backupContact = builder.backupContact;
     this.email = builder.email;
     this.address = builder.address;
-    this.patientTypeId = builder.patientTypeId; // numeric type of patient
+    this.priorityId = builder.priorityId; // numeric type of patient
     this.createdAt = builder.createdAt || new Date();
   }
 
@@ -78,8 +78,8 @@ export default class Patient {
         this.address = v;
         return this;
       }
-      setPatientTypeId(v) {
-        this.patientTypeId = v;
+      setPriorityId(v) {
+        this.priorityId = v;
         return this;
       }
       setCreatedAt(v) {
@@ -93,8 +93,7 @@ export default class Patient {
         if (!this.dateOfBirth) throw new Error("dateOfBirth required");
         if (!this.contactNumber) throw new Error("contactNumber required");
         if (!this.address) throw new Error("address required");
-        if (this.patientTypeId == null)
-          throw new Error("patientTypeId required");
+        if (this.priorityId == null) throw new Error("patientTypeId required");
         return new Patient(this);
       }
     };
@@ -112,7 +111,7 @@ export default class Patient {
       .setBackupContact(this.backupContact)
       .setEmail(this.email)
       .setAddress(this.address)
-      .setPatientTypeId(this.patientTypeId)
+      .setPriorityId(this.priorityId)
       .setCreatedAt(this.createdAt);
   }
 }

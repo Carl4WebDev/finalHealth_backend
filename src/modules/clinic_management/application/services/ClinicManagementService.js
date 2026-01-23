@@ -5,6 +5,8 @@ import ClinicRegistered from "../../domain/events/clinics/ClinicRegistered.js";
 import ClinicApproved from "../../domain/events/clinics/ClinicApproved.js";
 import ClinicRejected from "../../domain/events/clinics/ClinicRejected.js";
 
+import db from "../../../../core/database/db.js";
+
 export default class ClinicManagementService {
   constructor(clinicRepo, factory, eventBus) {
     this.clinicRepo = clinicRepo;
@@ -21,7 +23,7 @@ export default class ClinicManagementService {
     }
 
     const clinic = this.factory.createClinic(dto);
-    const saved = await this.clinicRepo.save(clinic);
+    const saved = await this.clinicRepo.save(clinic, actor.id);
 
     await this.eventBus.publish(
       new ClinicRegistered({
@@ -111,5 +113,70 @@ export default class ClinicManagementService {
 
   async getPendingClinics() {
     return await this.clinicRepo.findPendingVerification();
+  }
+
+  // ============================================================
+  // New & Planned api calls
+  // ============================================================
+  async getAllClinicsOfDoctor(doctorId, userId) {
+    return await this.clinicRepo.getAllClinicsOfDoctor(doctorId, userId);
+  }
+  async getAllClinicsOfUserNotAffiliated(doctorId, userId) {
+    return await this.clinicRepo.getAllClinicsOfUserNotAffiliated(
+      doctorId,
+      userId
+    );
+  }
+  async getClinicSessions(clinicId) {
+    return await this.clinicRepo.getClinicSessions(clinicId);
+  }
+
+  async createAffiliationDoctorToClinic(doctorId, clinicId) {
+    return await this.clinicRepo.createAffiliationDoctorToClinic(
+      doctorId,
+      clinicId
+    );
+  }
+  async createClinicSession(clinicId, clinicSessionData) {
+    return await this.clinicRepo.createClinicSession(
+      clinicId,
+      clinicSessionData
+    );
+  }
+
+  async deleteClinicAffiliation(doctorId, clinicId) {
+    await db.transaction(async (trx) => {
+      await this.clinicRepo.cancelByDoctorAndClinic(doctorId, clinicId, trx);
+
+      await this.clinicRepo.deleteByDoctorAndClinic(doctorId, clinicId, trx);
+
+      await this.clinicRepo.delete(doctorId, clinicId, trx);
+    });
+  }
+  async deleteClinicSession(sessionId) {
+    await db.transaction(async (trx) => {
+      // 1. Get clinic session
+      const session = await this.clinicRepo.getClinicSessionById(
+        sessionId,
+        trx
+      );
+
+      if (!session) {
+        throw new AppError(
+          "Clinic session not found",
+          404,
+          "SESSION_NOT_FOUND"
+        );
+      }
+
+      // 2. Cancel future appointments of this clinic
+      await this.clinicRepo.cancelAppointmentsByClinic(session, trx);
+
+      // 3. Delete doctor sessions tied to this clinic + day
+      await this.clinicRepo.deleteDoctorSessionsByClinicSchedule(session, trx);
+
+      // 4. Delete clinic session itself
+      await this.clinicRepo.deleteClinicSessionById(sessionId, trx);
+    });
   }
 }

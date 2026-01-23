@@ -1,7 +1,7 @@
 import express from "express";
 import {
   addToQueue,
-  getQueue,
+  getQueueOfDoctorInClinic,
   updateQueueStatus,
 } from "../controllers/QueueController.js";
 
@@ -15,11 +15,11 @@ router.get(
   "/doctor/:doctorId/clinic/:clinicId",
   authMiddleware,
   requireUser,
-  getQueue
+  getQueueOfDoctorInClinic
 );
 
 router.put(
-  "queue-entry/:id/status",
+  "/queue-entry/:queueId/status",
   authMiddleware,
   requireUser,
   updateQueueStatus

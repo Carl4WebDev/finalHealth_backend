@@ -1,5 +1,5 @@
 export default class IPatientRepository {
-  async save(patient) {
+  async createPatient(patient) {
     throw new Error("Not implemented");
   }
   async findById(id) {

@@ -10,11 +10,53 @@ const documentService = new MedicalRecordDocumentService(documentRepo);
 // CREATE
 export const createRecordDocument = async (req, res) => {
   try {
-    const dto = new CreateMedicalRecordDocumentDTO(req.body);
+    console.log("CONTROLLER HIT");
+
+    console.log("FILE:", req.file);
+    console.log("BODY:", req.body);
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Image file is required",
+      });
+    }
+    console.log("CONTROLLER HIT 0");
+
+    const recordId = parseInt(req.params.recordId, 10);
+
+    if (Number.isNaN(recordId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid recordId",
+      });
+    }
+
+    console.log(req.user.id);
+    const uploadedBy = req.user?.id;
+    if (!uploadedBy) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized upload",
+      });
+    }
+
+    const filePath = `/uploads/medical_records/${req.file.filename}`;
+
+    const dto = new CreateMedicalRecordDocumentDTO({
+      recordId,
+      documentImgPath: filePath,
+      uploadedBy,
+    });
+
     const document = await documentService.createDocument(dto);
+
     res.status(201).json({ success: true, document });
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to upload document",
+    });
   }
 };
 

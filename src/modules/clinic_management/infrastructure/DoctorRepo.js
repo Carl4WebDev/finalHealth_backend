@@ -3,13 +3,13 @@ import Doctor from "../domain/entities/Doctor.js";
 import db from "../../../core/database/db.js";
 
 export default class DoctorRepo extends IDoctorRepository {
-  async save(doctor) {
+  async save(doctor, actor) {
     const query = `
       INSERT INTO doctors 
       (f_name, m_name, l_name, specialization,
        license_number, years_experience, education,
-       gender, address, is_verified, verification_status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       gender, address, is_verified, verification_status, user_id)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
       RETURNING *;
     `;
 
@@ -23,8 +23,9 @@ export default class DoctorRepo extends IDoctorRepository {
       doctor.education,
       doctor.gender,
       doctor.address,
-      doctor.isVerified,
-      doctor.verificationStatus,
+      true,
+      "Approved",
+      actor,
     ];
 
     const result = await db.query(query, values);
@@ -48,7 +49,7 @@ export default class DoctorRepo extends IDoctorRepository {
        SET verification_status=$1, is_verified=$2 
        WHERE doctor_id=$3
        RETURNING *`,
-      [status, isVerified, doctorId]
+      [status, isVerified, doctorId],
     );
 
     return this._toEntity(result.rows[0]);
@@ -58,7 +59,7 @@ export default class DoctorRepo extends IDoctorRepository {
     const result = await db.query(
       `INSERT INTO doctor_clinics (doctor_id, clinic_id) VALUES ($1, $2)
      ON CONFLICT (doctor_id, clinic_id) DO NOTHING`,
-      [doctorId, clinicId]
+      [doctorId, clinicId],
     );
 
     return result.rows[0]; // no entity needed for junction table
@@ -118,5 +119,80 @@ export default class DoctorRepo extends IDoctorRepository {
       .setVerificationStatus(row.verification_status)
       .setCreatedAt(row.created_at)
       .build();
+  }
+
+  // ============================================================
+  // New & Planned api calls
+  // ============================================================
+  async getAllApprovedDoctorsOfUser(userId) {
+    const query = `
+SELECT d.*
+FROM doctors d
+WHERE d.user_id = $1
+  AND d.is_verified = TRUE
+  AND d.verification_status = 'Approved';
+
+  `;
+
+    const result = await db.query(query, [userId]);
+    return result.rows;
+  }
+
+  async getAllDoctorsOfUser(userId) {
+    const query = `
+SELECT d.*
+FROM doctors d
+WHERE d.user_id = $1;
+
+  `;
+
+    const result = await db.query(query, [userId]);
+    return result.rows;
+  }
+
+  async getAllInfoOfDoctor(doctorId, userId) {
+    const query = `
+SELECT d.*
+FROM doctors d
+WHERE d.user_id = $1;
+
+  `;
+
+    const result = await db.query(query, [userId]);
+    return result.rows;
+  }
+
+  async updateDoctorInfo(doctorId, data) {
+    const query = `
+    UPDATE doctors
+    SET
+      f_name = COALESCE($1, f_name),
+      m_name = COALESCE($2, m_name),
+      l_name = COALESCE($3, l_name),
+      specialization = COALESCE($4, specialization),
+      license_number = COALESCE($5, license_number),
+      years_experience = COALESCE($6, years_experience),
+      education = COALESCE($7, education),
+      gender = COALESCE($8, gender),
+      address = COALESCE($9, address)
+    WHERE doctor_id = $10
+    RETURNING *;
+  `;
+
+    const values = [
+      data.f_name ?? null,
+      data.m_name ?? null,
+      data.l_name ?? null,
+      data.specialization ?? null,
+      data.license_number ?? null,
+      data.years_experience ?? null,
+      data.education ?? null,
+      data.gender ?? null,
+      data.address ?? null,
+      doctorId,
+    ];
+
+    const { rows } = await db.query(query, values);
+    return rows[0];
   }
 }

@@ -169,4 +169,14 @@ export default class AppointmentService {
   async listTodayAppointments(doctorId, clinicId) {
     return this.appointmentRepo.findTodayAppointments(doctorId, clinicId);
   }
+
+  // ============================================================
+  // New & Planned api calls
+  // ============================================================
+  async getAllAppointmentsOfDoctorInClinic(doctorId, clinicId) {
+    return this.appointmentRepo.getAllAppointmentsOfDoctorInClinic(
+      doctorId,
+      clinicId
+    );
+  }
 }

@@ -13,6 +13,8 @@ import { loginLimiter } from "../../../core/middleware/rateLimiters.js";
 import { validateRegister } from "./validators/validateRegister.js";
 import { validateProfile } from "./validators/validateProfile.js";
 
+import { requireUser } from "../../../core/middleware/requireUser.js";
+
 import authMiddleware from "../../../core/middleware/Auth.js";
 
 const router = express.Router();
@@ -36,7 +38,7 @@ router.patch(
   "/update-settings",
   authMiddleware,
   upload.single("profileImg"),
-  updateSettings
+  updateSettings,
 );
 
 router.post("/register", validateRegister, register);
@@ -47,8 +49,8 @@ router.put(
   "/:userId/profile",
   authMiddleware,
   validateProfile,
-  updateUserProfile
+  updateUserProfile,
 );
 
-router.get("/:userId/personal-info", authMiddleware, getUserPersonalInfo);
+router.get("/personal-info", authMiddleware, requireUser, getUserPersonalInfo);
 export default router;

@@ -166,3 +166,27 @@ export const listTodayAppointments = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, { data: { appointments } });
 });
+
+// ============================================================
+// New & Planned api calls
+// ============================================================
+export const getAllAppointmentsOfDoctorInClinic = asyncHandler(
+  async (req, res) => {
+    const doctorId = Number(req.params.doctorId);
+    const clinicId = Number(req.params.clinicId);
+
+    const { allAppointments, todayAppointments } =
+      await appointmentService.getAllAppointmentsOfDoctorInClinic(
+        doctorId,
+        clinicId
+      );
+
+    return sendSuccess(res, {
+      message: "Ilovecs",
+      data: {
+        allAppointments,
+        todayAppointments,
+      },
+    });
+  }
+);

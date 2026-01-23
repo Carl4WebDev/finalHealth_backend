@@ -57,8 +57,8 @@ export default class QueueService {
     return saved;
   }
 
-  async listQueue(doctorId, clinicId) {
-    return this.queueRepo.listQueue(doctorId, clinicId);
+  async getQueueOfDoctorInClinic(doctorId, clinicId) {
+    return this.queueRepo.getQueueOfDoctorInClinic(doctorId, clinicId);
   }
 
   async updateStatus(queueEntryId, status, actor) {

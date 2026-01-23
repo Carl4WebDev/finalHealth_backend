@@ -95,9 +95,150 @@ export const getPendingClinics = asyncHandler(async (req, res) => {
 // GET ALL CLINICS (READ-ONLY)
 // ============================================================
 export const getAllClinics = asyncHandler(async (req, res) => {
-  const clinics = await clinicRepo.getAllClinics();
+  const clinics = await clinicRepo.getAllClinics(req.user.id);
 
   return sendSuccess(res, {
     data: { clinics },
+  });
+});
+
+// ============================================================
+// New & Planned api calls
+// ============================================================
+
+export const getAllClinicsOfDoctor = async (req, res) => {
+  try {
+    const doctorId = Number(req.params.doctorId);
+    const clinics = await clinicService.getAllClinicsOfDoctor(
+      doctorId,
+      req.user.id
+    );
+    res.status(200).json({
+      success: true,
+      data: clinics,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+
+export const getAllClinicsOfUserNotAffiliated = async (req, res) => {
+  try {
+    const doctorId = req.params.doctorId;
+    const clinics = await clinicService.getAllClinicsOfUserNotAffiliated(
+      doctorId,
+      req.user.id
+    );
+    res.status(200).json({
+      success: true,
+      data: clinics,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+export const getClinicSessions = async (req, res) => {
+  try {
+    const clinicId = req.params.clinicId;
+
+    const clinicSessions = await clinicService.getClinicSessions(clinicId);
+
+    res.status(200).json({
+      success: true,
+      data: clinicSessions,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+
+export const createAffiliationDoctorToClinic = asyncHandler(
+  async (req, res) => {
+    const doctorId = req.params.doctorId;
+    const clinicId = req.params.clinicId;
+
+    const affiliated = await clinicService.createAffiliationDoctorToClinic(
+      doctorId,
+      clinicId
+    );
+
+    return sendSuccess(res, {
+      statusCode: 201,
+      message: "Affliated doctor to clinic successfully!",
+      data: { affiliated },
+    });
+  }
+);
+export const createClinicSession = asyncHandler(async (req, res) => {
+  const clinicId = req.params.clinicId;
+  const clinicSessionData = req.body;
+
+  const session = await clinicService.createClinicSession(
+    clinicId,
+    clinicSessionData
+  );
+
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Created clinic session successfully!",
+    data: { session },
+  });
+});
+
+export const deleteClinicAffiliation = asyncHandler(async (req, res) => {
+  const doctorId = req.params.doctorId;
+  const clinicId = req.params.clinicId;
+
+  const unaffiliate = await clinicService.deleteClinicAffiliation(
+    doctorId,
+    clinicId
+  );
+
+  return sendSuccess(res, {
+    statusCode: 204,
+    message: "Unaffliated doctor to clinic successfully!",
+    data: { unaffiliate },
+  });
+});
+export const deleteClinicSession = asyncHandler(async (req, res) => {
+  const sessionId = req.params.sessionId;
+
+  const session = await clinicService.deleteClinicSession(sessionId);
+
+  return sendSuccess(res, {
+    statusCode: 204,
+    message: "Session deleted successfully!",
+    data: { session },
+  });
+});
+
+export const getClinicInfo = asyncHandler(async (req, res) => {
+  const clinicId = Number(req.params.clinicId);
+  const clinic = await clinicRepo.getClinicInfo(clinicId);
+
+  return sendSuccess(res, {
+    data: { clinic },
+  });
+});
+
+export const updateClinicInfo = asyncHandler(async (req, res) => {
+  const clinicId = Number(req.params.clinicId);
+  const clinicData = req.body;
+
+  const clinic = await clinicRepo.updateClinicInfo(clinicId, clinicData);
+
+  return sendSuccess(res, {
+    statusCode: 200,
+    message: "Clinic updated successfully",
+    data: { clinic },
   });
 });

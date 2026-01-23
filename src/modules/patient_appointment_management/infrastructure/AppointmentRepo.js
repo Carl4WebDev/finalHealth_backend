@@ -226,4 +226,67 @@ export default class AppointmentRepo extends IAppointmentRepository {
       .setCreatedAt(row.created_at)
       .build();
   }
+
+  // ============================================================
+  // New & Planned api calls
+  // ============================================================
+
+  async getAllAppointmentsOfDoctorInClinic(doctorId, clinicId) {
+    const baseSelect = `
+    SELECT
+      a.appointment_id,
+      TO_CHAR(a.appointment_date, 'YYYY-MM-DD') AS appointment_date,
+      a.appointment_type,
+      a.status,
+      a.doctor_id,
+      a.clinic_id,
+
+      p.patient_id,
+      p.f_name AS patient_f_name,
+      p.m_name AS patient_m_name,
+      p.l_name AS patient_l_name,
+      p.gender,
+      p.date_of_birth,
+      p.contact_number,
+      p.backup_contact,
+      p.email,
+      p.address,
+      p.priority_id,
+
+      CONCAT('Dr. ', d.f_name, ' ', d.l_name) AS doctor_name,
+      c.clinic_name,
+      pr.priority_level AS priority_type
+    FROM appointments a
+    JOIN patients p ON p.patient_id = a.patient_id
+    JOIN doctors d ON d.doctor_id = a.doctor_id
+    JOIN clinics c ON c.clinic_id = a.clinic_id
+    LEFT JOIN priority_queue pr ON pr.priority_id = a.priority_id
+    WHERE a.doctor_id = $1
+      AND a.clinic_id = $2
+      AND a.status = 'Scheduled'
+  `;
+
+    const todayQuery = `
+    ${baseSelect}
+    AND a.appointment_date = CURRENT_DATE
+    ORDER BY a.created_at ASC
+  `;
+
+    const upcomingQuery = `
+    ${baseSelect}
+    AND a.appointment_date > CURRENT_DATE
+    AND a.status = 'Scheduled'
+    ORDER BY a.appointment_date ASC, a.created_at ASC
+  `;
+
+    const [todayResult, upcomingResult] = await Promise.all([
+      db.query(todayQuery, [doctorId, clinicId]),
+      db.query(upcomingQuery, [doctorId, clinicId]),
+    ]);
+
+    return {
+      todayAppointments: todayResult.rows,
+      allAppointments: upcomingResult.rows,
+    };
+  }
 }
