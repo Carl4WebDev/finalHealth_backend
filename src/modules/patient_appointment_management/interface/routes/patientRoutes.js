@@ -11,6 +11,8 @@ import {
 import authMiddleware from "../../../../core/middleware/Auth.js";
 import { requireUser } from "../../../../core/middleware/requireUser.js";
 
+import requireActiveSubscription from "../../../../core/middleware/RequireActiveSubscription.js";
+
 const router = express.Router();
 
 router.post("/", authMiddleware, requireUser, createPatient);
@@ -31,6 +33,12 @@ router.get(
 
 router.get("/patient/:id", authMiddleware, getPatientById);
 
-router.put("/:patientId/patient", authMiddleware, requireUser, updatePatient);
+router.put(
+  "/:patientId/patient",
+  authMiddleware,
+  requireActiveSubscription,
+  requireUser,
+  updatePatient,
+);
 
 export default router;

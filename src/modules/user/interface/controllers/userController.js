@@ -156,10 +156,13 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
 export const updateSettings = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
+  const currentPassword = req.body.currentPassword?.trim();
+  const newPassword = req.body.newPassword?.trim();
+
   const payload = {
-    currentPassword: req.body.currentPassword,
-    newPassword: req.body.newPassword,
-    profileImgPath: req.file ? req.file.filename : undefined,
+    currentPassword,
+    newPassword,
+    profileImgPath: req.file.filename,
   };
 
   const result = await userService.updateSettings(userId, payload);

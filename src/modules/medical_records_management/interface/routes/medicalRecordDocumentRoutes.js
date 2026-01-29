@@ -11,6 +11,7 @@ import { uploadMedicalRecordDocument } from "../../../../core/middleware/uploadM
 import { requireUser } from "../../../../core/middleware/requireUser.js";
 import authMiddleware from "../../../../core/middleware/Auth.js";
 
+import requireActiveSubscription from "../../../../core/middleware/RequireActiveSubscription.js";
 /**
  * Upload image for a medical record
  * POST /record/:recordId/upload
@@ -18,6 +19,7 @@ import authMiddleware from "../../../../core/middleware/Auth.js";
 router.post(
   "/record/:recordId/upload",
   authMiddleware,
+  requireActiveSubscription,
   requireUser,
   uploadMedicalRecordDocument.single("image"),
   createRecordDocument,

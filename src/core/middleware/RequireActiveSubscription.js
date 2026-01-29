@@ -13,7 +13,7 @@ export default async function requireActiveSubscription(req, res, next) {
         AND end_date >= NOW()
       LIMIT 1
       `,
-      [userId]
+      [userId],
     );
 
     if (!result.rows.length) {

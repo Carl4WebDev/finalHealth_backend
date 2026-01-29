@@ -62,7 +62,7 @@ export default class UserService {
       new UserRegistered({
         userId: createdUser.userId,
         email: createdUser.email,
-      })
+      }),
     );
 
     return createdUser;
@@ -85,7 +85,7 @@ export default class UserService {
         new UserLoginFailed({
           email,
           reason: "EMAIL_NOT_FOUND",
-        })
+        }),
       );
       throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
@@ -96,7 +96,7 @@ export default class UserService {
         new UserLoginFailed({
           email,
           reason: "WRONG_PASSWORD",
-        })
+        }),
       );
       throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
@@ -106,7 +106,7 @@ export default class UserService {
         new UserLoginFailed({
           email,
           reason: "ACCOUNT_INACTIVE",
-        })
+        }),
       );
       throw new AppError("Account is inactive", 403, "ACCOUNT_INACTIVE");
     }
@@ -168,9 +168,8 @@ export default class UserService {
     }
 
     const user = result.user;
-    const userProfile = result.userProfile;
 
-    // PASSWORD CHANGE
+    // PASSWORD CHANGE (CORRECT)
     if (currentPassword || newPassword) {
       if (!currentPassword || !newPassword) {
         throw new ValidationError("Both current and new password are required");
@@ -184,25 +183,18 @@ export default class UserService {
       const newHash = await bcrypt.hash(newPassword, 10);
       await this.userRepo.updatePassword(userId, newHash);
 
-      // ✅ EMIT EVENT
       await this.eventBus.publish(new UserPasswordChanged({ userId }));
     }
 
-    // PROFILE IMAGE UPDATE
+    // PROFILE IMAGE UPDATE (UNCHANGED)
     if (profileImgPath) {
-      const updatedProfile = userProfile
-        .toBuilder()
-        .setProfileImg(profileImgPath)
-        .build();
+      await this.userRepo.updateProfileImage(userId, profileImgPath);
 
-      await this.userRepo.updateProfileImage(updatedProfile);
-
-      // ✅ EMIT EVENT
       await this.eventBus.publish(
         new UserProfileImageUpdated({
           userId,
           imagePath: profileImgPath,
-        })
+        }),
       );
     }
 

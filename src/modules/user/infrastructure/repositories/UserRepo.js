@@ -158,14 +158,12 @@ export default class UserRepo extends IUserRepository {
   }
   async updateProfileImage(userId, filePath) {
     const query = `
-      UPDATE user_profile
-      SET profile_img_path=$1
-      WHERE user_id=$2
-      RETURNING *
-    `;
+    UPDATE user_profile
+    SET profile_img_path = $1
+    WHERE user_id = $2
+  `;
 
-    const { rows } = await db.query(query, [filePath, userId]);
-    return this._toProfileEntity(rows[0]);
+    await db.query(query, [filePath, userId]);
   }
 
   _toUserEntity(row) {

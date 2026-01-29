@@ -26,7 +26,7 @@ const router = express.Router();
  */
 
 const storage = multer.diskStorage({
-  destination: "uploads/profile/",
+  destination: "src/core/uploads/profile",
   filename: (req, file, cb) => {
     cb(null, Date.now() + "_" + file.originalname);
   },
@@ -37,6 +37,7 @@ const upload = multer({ storage });
 router.patch(
   "/update-settings",
   authMiddleware,
+  requireUser,
   upload.single("profileImg"),
   updateSettings,
 );
