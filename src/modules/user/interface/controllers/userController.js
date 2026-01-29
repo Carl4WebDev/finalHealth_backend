@@ -96,7 +96,7 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     birthDate: req.body.birthDate,
   };
 
-  const updatedUser = await userService.updateProfile(userId, payload);
+  const updatedUser = await userRepo.updateProfile(userId, payload);
 
   return sendSuccess(res, {
     message: "User profile updated",
