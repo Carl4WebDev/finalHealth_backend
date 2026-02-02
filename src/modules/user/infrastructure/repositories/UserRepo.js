@@ -32,10 +32,10 @@ export default class UserRepo extends IUserRepository {
 
     const row = rows[0];
 
-    // Build core user entity (NO CHANGE)
+    // Core user entity
     const user = this._toUserEntity(row);
 
-    // Attach lightweight profile data directly — NOT as a new entity
+    // Profile fields
     user.firstName = row.f_name || null;
     user.middleName = row.m_name || null;
     user.lastName = row.l_name || null;
@@ -43,10 +43,12 @@ export default class UserRepo extends IUserRepository {
     user.address = row.address || null;
     user.birthDate = row.birth_date || null;
 
-    // Build image URL safely
-    user.profileImgPath = row.profile_img_path || null;
+    // ✅ BUILD FULL IMAGE URL HERE
+    user.profileImgUrl = row.profile_img_path
+      ? `${BASE_API}/uploads/profile/${row.profile_img_path}`
+      : null;
 
-    return user; // RETURN SAME TYPE AS BEFORE
+    return user;
   }
 
   async createUser(user) {
@@ -144,9 +146,26 @@ export default class UserRepo extends IUserRepository {
 
     const row = rows[0];
 
+    // Core entities (unchanged)
+    const user = this._toUserEntity(row);
+    const userProfile = this._toProfileEntity(row);
+
+    // 🔁 ALIGN USER SHAPE WITH findByEmail
+    user.firstName = row.f_name || null;
+    user.middleName = row.m_name || null;
+    user.lastName = row.l_name || null;
+    user.contactNumber = row.contact_num || null;
+    user.address = row.address || null;
+    user.birthDate = row.birth_date || null;
+
+    // ✅ BUILD FULL IMAGE URL HERE
+    user.profileImgUrl = row.profile_img_path
+      ? `${BASE_API}/uploads/profile/${row.profile_img_path}`
+      : null;
+
     return {
-      user: this._toUserEntity(row),
-      userProfile: this._toProfileEntity(row),
+      user,
+      userProfile, // kept intact
     };
   }
 

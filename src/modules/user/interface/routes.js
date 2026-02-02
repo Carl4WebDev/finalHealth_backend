@@ -7,6 +7,7 @@ import {
   updateUserProfile,
   getUserPersonalInfo,
   updateSettings,
+  updateProfileImage,
 } from "./controllers/userController.js";
 
 import { loginLimiter } from "../../../core/middleware/rateLimiters.js";
@@ -34,12 +35,14 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+router.patch("/update-settings", authMiddleware, requireUser, updateSettings);
+
 router.patch(
-  "/update-settings",
+  "/update-picture",
   authMiddleware,
   requireUser,
   upload.single("profileImg"),
-  updateSettings,
+  updateProfileImage,
 );
 
 router.post("/register", validateRegister, register);

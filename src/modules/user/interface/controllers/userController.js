@@ -162,13 +162,26 @@ export const updateSettings = asyncHandler(async (req, res) => {
   const payload = {
     currentPassword,
     newPassword,
-    profileImgPath: req.file.filename,
   };
 
   const result = await userService.updateSettings(userId, payload);
 
   return sendSuccess(res, {
     message: "Settings updated",
+    data: { user: result },
+  });
+});
+
+export const updateProfileImage = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const payload = {
+    profileImgPath: req.file.filename,
+  };
+
+  const result = await userService.updateProfileImage(userId, payload);
+
+  return sendSuccess(res, {
+    message: "profile image successfully updated",
     data: { user: result },
   });
 });

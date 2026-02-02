@@ -160,7 +160,7 @@ export default class UserService {
   // UPDATE ACCOUNT SETTINGS
   // ============================================================
   async updateSettings(userId, dto) {
-    const { currentPassword, newPassword, profileImgPath } = dto;
+    const { currentPassword, newPassword } = dto;
 
     const result = await this.userRepo.findByUserId(userId);
     if (!result || !result.user) {
@@ -186,6 +186,11 @@ export default class UserService {
       await this.eventBus.publish(new UserPasswordChanged({ userId }));
     }
 
+    return { success: true, userId };
+  }
+  async updateProfileImage(userId, dto) {
+    const { profileImgPath } = dto;
+    console.log(profileImgPath);
     // PROFILE IMAGE UPDATE (UNCHANGED)
     if (profileImgPath) {
       await this.userRepo.updateProfileImage(userId, profileImgPath);
