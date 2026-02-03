@@ -31,7 +31,7 @@ export default class AdminService {
       throw new AppError(
         "Admin email already exists",
         409,
-        "ADMIN_EMAIL_EXISTS"
+        "ADMIN_EMAIL_EXISTS",
       );
     }
 
@@ -51,7 +51,7 @@ export default class AdminService {
       new AdminRegistered({
         adminId: createdAdmin.adminId,
         email: createdAdmin.email,
-      })
+      }),
     );
 
     return createdAdmin;
@@ -75,7 +75,7 @@ export default class AdminService {
         new AdminLoginFailed({
           email,
           reason: "EMAIL_NOT_FOUND",
-        })
+        }),
       );
       throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
@@ -88,7 +88,7 @@ export default class AdminService {
         new AdminLoginFailed({
           email,
           reason: "WRONG_PASSWORD",
-        })
+        }),
       );
       throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
@@ -99,7 +99,7 @@ export default class AdminService {
         new AdminLoginFailed({
           email,
           reason: "ADMIN_INACTIVE",
-        })
+        }),
       );
       throw new AppError("Admin account is inactive", 403, "ADMIN_INACTIVE");
     }
@@ -116,9 +116,15 @@ export default class AdminService {
     await this.eventBus.publish(
       new AdminLoggedIn({
         adminId: admin.adminId,
-      })
+      }),
     );
 
     return { token, admin };
+  }
+
+  async getAllSubscribers() {
+    const records = await this.adminRepo.fetchUsersWithSubscriptions();
+
+    return records;
   }
 }

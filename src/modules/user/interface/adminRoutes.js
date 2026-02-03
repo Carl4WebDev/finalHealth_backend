@@ -7,9 +7,12 @@ import authMiddleware from "../../../core/middleware/Auth.js";
 import {
   login as adminLogin,
   register as adminRegister,
+  getAllSubscribers,
 } from "./controllers/adminController.js";
 
 const router = express.Router();
+
+import { requireAdmin } from "../../../core/middleware/requireAdmin.js";
 
 /**
  * ===========================
@@ -18,5 +21,7 @@ const router = express.Router();
  */
 router.post("/register", validateAdminRegister, adminRegister);
 router.post("/login", loginLimiter, adminLogin);
+
+router.get("/subscribers", authMiddleware, requireAdmin, getAllSubscribers);
 
 export default router;

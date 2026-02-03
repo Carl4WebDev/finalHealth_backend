@@ -19,7 +19,7 @@ router.post("/payments/intent", authMiddleware, async (req, res) => {
       `SELECT plan_id, price 
        FROM subscription_plan 
        WHERE plan_id = $1 AND isactive = TRUE`,
-      [planId]
+      [planId],
     );
 
     if (!result.rows.length) {

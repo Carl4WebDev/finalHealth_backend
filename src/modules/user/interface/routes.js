@@ -57,4 +57,5 @@ router.put(
 );
 
 router.get("/personal-info", authMiddleware, requireUser, getUserPersonalInfo);
+
 export default router;

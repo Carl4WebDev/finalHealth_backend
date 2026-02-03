@@ -205,4 +205,33 @@ export default class UserService {
 
     return { success: true, userId };
   }
+
+  async getAllSubscribers() {
+    const records = await this.userRepo.fetchUsersWithSubscriptions();
+
+    return records
+      .filter((record) => {
+        // Business rule: what counts as a subscriber
+        return ["active", "expired"].includes(record.subscription_status);
+      })
+      .map((record) => ({
+        userId: record.user_id,
+        email: record.email,
+        userStatus: record.user_status,
+
+        subscription: {
+          id: record.subscription_id,
+          status: record.subscription_status,
+          startDate: record.start_date,
+          endDate: record.end_date,
+          autoRenew: record.auto_renew,
+        },
+
+        plan: {
+          name: record.plan_name,
+          type: record.plan_type,
+          price: record.price,
+        },
+      }));
+  }
 }

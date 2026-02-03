@@ -55,3 +55,12 @@ export const login = asyncHandler(async (req, res) => {
     },
   });
 });
+
+export const getAllSubscribers = asyncHandler(async (req, res) => {
+  // 🔒 Assumption: admin auth middleware already validated req.admin
+  const subscribers = await adminService.getAllSubscribers();
+
+  return sendSuccess(res, {
+    data: { subscribers },
+  });
+});

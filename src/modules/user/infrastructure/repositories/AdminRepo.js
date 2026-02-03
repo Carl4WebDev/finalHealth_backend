@@ -63,4 +63,49 @@ export default class AdminRepo extends IAdminRepository {
       adminId,
     ]);
   }
+
+  async fetchUsersWithSubscriptions() {
+    const query = `
+    SELECT
+      u.user_id,
+      u.email,
+      u.status,
+
+      up.f_name,
+      up.m_name,
+      up.l_name,
+
+      us.subscription_id,
+      us.status AS subscription_status,
+      us.start_date,
+      us.end_date,
+      us.auto_renew,
+
+      sp.plan_id,
+      sp.plan_name,
+      sp.plan_type,
+      sp.price
+    FROM users u
+    LEFT JOIN (
+      SELECT DISTINCT ON (user_id)
+        user_id,
+        subscription_id,
+        status,
+        start_date,
+        end_date,
+        auto_renew,
+        plan_id
+      FROM user_subscription
+      WHERE status <> 'cancelled'
+      ORDER BY user_id, start_date DESC
+    ) us ON us.user_id = u.user_id
+    LEFT JOIN subscription_plan sp
+      ON sp.plan_id = us.plan_id
+    LEFT JOIN user_profile up
+      ON up.user_id = u.user_id
+  `;
+
+    const { rows } = await db.query(query);
+    return rows;
+  }
 }
