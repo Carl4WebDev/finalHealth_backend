@@ -4,6 +4,30 @@ import User from "../../domain/entities/User.js";
 import UserProfile from "../../domain/entities/UserProfile.js";
 const BASE_API = process.env.API_BASE_URL;
 export default class UserRepo extends IUserRepository {
+  async createFreeTrialSubscription(userId) {
+    const query = `
+    INSERT INTO user_subscription
+    (user_id, plan_id, start_date, end_date, auto_renew, status, renewal_date)
+    VALUES (
+      $1,
+      (
+        SELECT plan_id
+        FROM subscription_plan
+        WHERE plan_type = 'free'
+          AND isactive = true
+        LIMIT 1
+      ),
+      CURRENT_DATE,
+      CURRENT_DATE + INTERVAL '7 days',
+      false,
+      'active',
+      NULL
+    )
+  `;
+
+    await db.query(query, [userId]);
+  }
+
   async findByEmail(email) {
     const query = `
     SELECT 

@@ -2,10 +2,11 @@ import { getBillingStrategy } from "../../domain/billing/BillingStrategyFactory.
 import UserSubscription from "../../domain/entities/UserSubscription.js";
 
 export default class SubscriptionService {
-  constructor(planRepo, subscriptionRepo, paymentService) {
+  constructor(planRepo, subscriptionRepo, paymentService, paymentRepo) {
     this.planRepo = planRepo;
     this.subscriptionRepo = subscriptionRepo;
     this.paymentService = paymentService;
+    this.paymentRepo = paymentRepo;
   }
 
   // REQ033, REQ034, REQ035, REQ036, REQ038
@@ -35,7 +36,7 @@ export default class SubscriptionService {
 
       subscription = await this.subscriptionRepo.update(
         subscription.subscriptionId,
-        subscription
+        subscription,
       );
     } else {
       // 🆕 First-time subscription
@@ -83,7 +84,7 @@ export default class SubscriptionService {
 
     const saved = await this.subscriptionRepo.update(
       updated.subscriptionId,
-      updated
+      updated,
     );
 
     await this.paymentService.processRenewalPayment({
@@ -125,5 +126,54 @@ export default class SubscriptionService {
       .build();
 
     return await this.subscriptionRepo.update(updated.subscriptionId, updated);
+  }
+
+  async getUserSubscriptionHistory(userId) {
+    const rows = await this.subscriptionRepo.findHistoryWithPlan(userId);
+
+    const subscriptions = rows.map((r) => ({
+      subscriptionId: r.subscription_id,
+      planId: r.plan_id,
+      planName: r.plan_name,
+      planType: r.plan_type,
+      price: Number(r.price),
+      startDate: r.start_date,
+      endDate: r.end_date,
+      status: r.status,
+      autoRenew: r.auto_renew,
+      renewalDate: r.renewal_date,
+      createdAt: r.created_at,
+    }));
+
+    return { subscriptions };
+  }
+
+  async getUserPaymentHistory(userId) {
+    const payments = await this.paymentRepo.findByUser(userId);
+    console.log(payments);
+
+    const enriched = [];
+
+    for (const p of payments) {
+      const subscriptionId = p.subscriptionId;
+
+      const sub = await this.subscriptionRepo.findById(subscriptionId);
+      if (!sub) continue;
+
+      const plan = await this.planRepo.findById(sub.planId);
+
+      enriched.push({
+        paymentId: p.paymentId,
+        subscriptionId: subscriptionId,
+        planName: plan?.planName || "Unknown Plan",
+        amount: p.amount,
+        paymentMethod: p.paymentMethod,
+        transactionId: p.transactionId,
+        paymentDate: p.paymentDate,
+        status: p.status,
+      });
+    }
+
+    return { payments: enriched };
   }
 }

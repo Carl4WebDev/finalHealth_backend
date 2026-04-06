@@ -46,7 +46,7 @@ export default class UserService {
     const createdUser = await this.userRepo.createUser(userEntity);
 
     const profileEntity = new UserProfile.Builder()
-      .setUserId(createdUser.userId)
+      .setUserId(createdUser.userId) // ← REQUIRED
       .setFName(dto.fName)
       .setMName(dto.mName)
       .setLName(dto.lName)
@@ -57,7 +57,9 @@ export default class UserService {
 
     await this.userRepo.createUserProfile(profileEntity);
 
-    // ✅ EMIT EVENT
+    // 🔥 ADD THIS
+    await this.userRepo.createFreeTrialSubscription(createdUser.userId);
+
     await this.eventBus.publish(
       new UserRegistered({
         userId: createdUser.userId,
@@ -67,7 +69,6 @@ export default class UserService {
 
     return createdUser;
   }
-
   // ============================================================
   // LOGIN USER
   // ============================================================

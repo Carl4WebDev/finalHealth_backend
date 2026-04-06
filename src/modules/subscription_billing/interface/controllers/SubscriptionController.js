@@ -18,8 +18,12 @@ const paymentService = new PaymentService(paymentRepo, paymentGateway);
 const subscriptionService = new SubscriptionService(
   planRepo,
   userSubRepo,
-  paymentService
+  paymentService,
+  paymentRepo,
 );
+
+import { sendSuccess } from "../../../../core/http/apiResponse.js";
+import { asyncHandler } from "../../../../core/middleware/asyncHandler.js";
 
 // GET /api/subscription/plans
 export const listPlans = async (req, res) => {
@@ -104,3 +108,27 @@ export const cancelMySubscription = async (req, res) => {
     res.status(400).json({ success: false, error: err.message });
   }
 };
+
+// GET /api/subscription/history
+export const getMySubscriptionHistory = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) throw new Error("Authenticated user required");
+
+  const result = await subscriptionService.getUserSubscriptionHistory(userId);
+
+  return sendSuccess(res, {
+    message: "Subscription history retrieved",
+    data: { subscriptions: result.subscriptions },
+  });
+});
+// GET /api/subscription/payments
+export const getMyPaymentHistory = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) throw new Error("Authenticated user required");
+
+  const result = await subscriptionService.getUserPaymentHistory(userId);
+  return sendSuccess(res, {
+    message: "Payment history retrieved",
+    data: { payments: result.payments },
+  });
+});

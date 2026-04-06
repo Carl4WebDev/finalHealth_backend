@@ -28,7 +28,7 @@ export default class AppointmentRepo extends IAppointmentRepository {
   async findById(id) {
     const result = await db.query(
       `SELECT * FROM appointments WHERE appointment_id=$1`,
-      [id]
+      [id],
     );
     if (result.rows.length === 0) return null;
     return this._toEntity(result.rows[0]);
@@ -39,7 +39,7 @@ export default class AppointmentRepo extends IAppointmentRepository {
       `SELECT * FROM appointments 
        WHERE patient_id=$1
        ORDER BY appointment_date DESC`,
-      [patientId]
+      [patientId],
     );
     return result.rows.map((r) => this._toEntity(r));
   }
@@ -50,7 +50,7 @@ export default class AppointmentRepo extends IAppointmentRepository {
        WHERE clinic_id=$1
          AND appointment_date BETWEEN $2 AND $3
        ORDER BY appointment_date`,
-      [clinicId, fromDate, toDate]
+      [clinicId, fromDate, toDate],
     );
     return result.rows.map((r) => this._toEntity(r));
   }
@@ -84,7 +84,7 @@ export default class AppointmentRepo extends IAppointmentRepository {
        SET status=$1
        WHERE appointment_id=$2
        RETURNING *;`,
-      [status, id]
+      [status, id],
     );
     return this._toEntity(result.rows[0]);
   }
@@ -142,7 +142,7 @@ export default class AppointmentRepo extends IAppointmentRepository {
        WHERE patient_id=$1
          AND appointment_date=$2
          AND status IN ('Scheduled','Completed')`,
-      [patientId, date]
+      [patientId, date],
     );
     return result.rows.map((r) => this._toEntity(r));
   }

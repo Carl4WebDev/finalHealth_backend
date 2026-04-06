@@ -3,7 +3,7 @@ import Patient from "../domain/entities/Patient.js";
 import db from "../../../core/database/db.js";
 
 export default class PatientRepo extends IPatientRepository {
-  async createPatient(patient) {
+  async createPatient(patient, userId) {
     const client = await db.getClient();
 
     try {
@@ -37,17 +37,25 @@ export default class PatientRepo extends IPatientRepository {
 
       const patientId = patientResult.rows[0].patient_id;
 
-      const linkQuery = `
+      const linkDoctorClinicQuery = `
       INSERT INTO doctor_patient_clinic
       (doctor_id, patient_id, clinic_id)
       VALUES ($1, $2, $3);
     `;
 
-      await client.query(linkQuery, [
+      await client.query(linkDoctorClinicQuery, [
         patient.doctorId,
         patientId,
         patient.clinicId,
       ]);
+
+      const linkUserPatientQuery = `
+      INSERT INTO user_patients
+      (user_id, patient_id)
+      VALUES ($1, $2);
+    `;
+
+      await client.query(linkUserPatientQuery, [userId, patientId]);
 
       await client.query("COMMIT");
 

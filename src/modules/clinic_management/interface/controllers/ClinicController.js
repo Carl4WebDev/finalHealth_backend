@@ -24,7 +24,7 @@ const factory = new DoctorFactory();
 const clinicService = new ClinicManagementService(
   clinicRepo,
   factory,
-  eventBus
+  eventBus,
 );
 
 // ============================================================
@@ -32,6 +32,7 @@ const clinicService = new ClinicManagementService(
 // ============================================================
 export const registerClinic = asyncHandler(async (req, res) => {
   const dto = new RegisterClinicDTO(req.body);
+  console.log(req.user);
   const clinic = await clinicService.registerClinic(dto, req.user);
 
   return sendSuccess(res, {
@@ -111,7 +112,7 @@ export const getAllClinicsOfDoctor = async (req, res) => {
     const doctorId = Number(req.params.doctorId);
     const clinics = await clinicService.getAllClinicsOfDoctor(
       doctorId,
-      req.user.id
+      req.user.id,
     );
     res.status(200).json({
       success: true,
@@ -130,7 +131,7 @@ export const getAllClinicsOfUserNotAffiliated = async (req, res) => {
     const doctorId = req.params.doctorId;
     const clinics = await clinicService.getAllClinicsOfUserNotAffiliated(
       doctorId,
-      req.user.id
+      req.user.id,
     );
     res.status(200).json({
       success: true,
@@ -168,7 +169,7 @@ export const createAffiliationDoctorToClinic = asyncHandler(
 
     const affiliated = await clinicService.createAffiliationDoctorToClinic(
       doctorId,
-      clinicId
+      clinicId,
     );
 
     return sendSuccess(res, {
@@ -176,7 +177,7 @@ export const createAffiliationDoctorToClinic = asyncHandler(
       message: "Affliated doctor to clinic successfully!",
       data: { affiliated },
     });
-  }
+  },
 );
 export const createClinicSession = asyncHandler(async (req, res) => {
   const clinicId = req.params.clinicId;
@@ -184,7 +185,7 @@ export const createClinicSession = asyncHandler(async (req, res) => {
 
   const session = await clinicService.createClinicSession(
     clinicId,
-    clinicSessionData
+    clinicSessionData,
   );
 
   return sendSuccess(res, {
@@ -200,7 +201,7 @@ export const deleteClinicAffiliation = asyncHandler(async (req, res) => {
 
   const unaffiliate = await clinicService.deleteClinicAffiliation(
     doctorId,
-    clinicId
+    clinicId,
   );
 
   return sendSuccess(res, {

@@ -55,7 +55,7 @@ export default class UserSubscriptionRepo extends IUserSubscriptionRepository {
   async findById(id) {
     const res = await db.query(
       "SELECT * FROM user_subscription WHERE subscription_id = $1",
-      [id]
+      [id],
     );
     if (!res.rows.length) return null;
     return this._toEntity(res.rows[0]);
@@ -70,7 +70,7 @@ export default class UserSubscriptionRepo extends IUserSubscriptionRepository {
       ORDER BY created_at DESC
       LIMIT 1;
       `,
-      [userId]
+      [userId],
     );
     if (!res.rows.length) return null;
     return this._toEntity(res.rows[0]);
@@ -82,7 +82,7 @@ export default class UserSubscriptionRepo extends IUserSubscriptionRepository {
       .setUserId(row.user_id)
       .setPlanId(row.plan_id)
       .setStartDate(
-        row.start_date?.toISOString?.().slice(0, 10) || row.start_date
+        row.start_date?.toISOString?.().slice(0, 10) || row.start_date,
       )
       .setEndDate(row.end_date?.toISOString?.().slice(0, 10) || row.end_date)
       .setAutoRenew(row.auto_renew)
@@ -90,9 +90,46 @@ export default class UserSubscriptionRepo extends IUserSubscriptionRepository {
       .setRenewalDate(
         row.renewal_date
           ? row.renewal_date.toISOString?.().slice(0, 10) || row.renewal_date
-          : null
+          : null,
       )
       .setCreatedAt(row.created_at)
       .build();
+  }
+
+  async findAllByUser(userId) {
+    const sql = `
+    SELECT *
+    FROM user_subscription
+    WHERE user_id = $1
+    ORDER BY created_at DESC
+  `;
+
+    const { rows } = await db.query(sql, [userId]);
+    return rows;
+  }
+
+  async findHistoryWithPlan(userId) {
+    const sql = `
+    SELECT 
+      us.subscription_id,
+      us.plan_id,
+      sp.plan_name,
+      sp.plan_type,
+      sp.price,
+      us.start_date,
+      us.end_date,
+      us.status,
+      us.auto_renew,
+      us.renewal_date,
+      us.created_at
+    FROM user_subscription us
+    JOIN subscription_plan sp 
+      ON us.plan_id = sp.plan_id
+    WHERE us.user_id = $1
+    ORDER BY us.created_at DESC
+  `;
+
+    const { rows } = await db.query(sql, [userId]);
+    return rows; // raw DB rows
   }
 }

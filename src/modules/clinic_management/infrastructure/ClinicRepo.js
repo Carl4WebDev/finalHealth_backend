@@ -3,6 +3,17 @@ import Clinic from "../domain/entities/Clinic.js";
 import db from "../../../core/database/db.js";
 
 export default class ClinicRepo extends IClinicRepository {
+  async countByUser(userId) {
+    const query = `
+      SELECT COUNT(*)::int AS total
+      FROM clinics
+      WHERE user_id = $1
+    `;
+
+    const { rows } = await db.query(query, [userId]);
+    return rows[0]?.total || 0;
+  }
+
   /* ============================
      SAVE CLINIC
   ============================ */

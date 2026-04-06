@@ -33,7 +33,7 @@ router.get(
   "/clinics/pending/all",
   authMiddleware,
   requireAdmin,
-  getPendingClinics
+  getPendingClinics,
 );
 
 // READ
@@ -47,63 +47,63 @@ router.get(
   "/doctor/:doctorId/clinics",
   authMiddleware,
   requireUser,
-  getAllClinicsOfDoctor
+  getAllClinicsOfDoctor,
 );
 
 router.get(
   "/doctor/:doctorId/not-affiliated-clinics",
   authMiddleware,
   requireUser,
-  getAllClinicsOfUserNotAffiliated
+  getAllClinicsOfUserNotAffiliated,
 );
 
 router.get(
   "/clinic/:clinicId/sessions",
   authMiddleware,
   requireUser,
-  getClinicSessions
+  getClinicSessions,
 );
 
 router.get(
   "/clinic/:clinicId/clinic-info",
   authMiddleware,
   requireUser,
-  getClinicInfo
+  getClinicInfo,
 );
 
 router.post(
   "/doctor/:doctorId/clinic/:clinicId/affiliate-clinic",
   authMiddleware,
   requireUser,
-  createAffiliationDoctorToClinic
+  createAffiliationDoctorToClinic,
 );
 
 router.post(
   "/clinic/:clinicId/create-clinic-session",
   authMiddleware,
   requireUser,
-  createClinicSession
+  createClinicSession,
 );
 
 router.delete(
   "/doctor/:doctorId/clinic/:clinicId/unaffiliate-clinic",
   authMiddleware,
   requireUser,
-  deleteClinicAffiliation
+  deleteClinicAffiliation,
 );
 
 router.delete(
   "/session/:sessionId/delete-session",
   authMiddleware,
   requireUser,
-  deleteClinicSession
+  deleteClinicSession,
 );
 
 router.put(
   "/clinic/:clinicId/update-clinic",
   authMiddleware,
   requireUser,
-  updateClinicInfo
+  updateClinicInfo,
 );
 
 export default router;

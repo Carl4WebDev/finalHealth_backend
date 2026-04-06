@@ -3,6 +3,17 @@ import Doctor from "../domain/entities/Doctor.js";
 import db from "../../../core/database/db.js";
 
 export default class DoctorRepo extends IDoctorRepository {
+  async countByUser(userId) {
+    const query = `
+      SELECT COUNT(*)::int AS total
+      FROM doctors
+      WHERE user_id = $1
+    `;
+
+    const { rows } = await db.query(query, [userId]);
+    return rows[0]?.total || 0;
+  }
+
   async save(doctor, actor) {
     const query = `
       INSERT INTO doctors 

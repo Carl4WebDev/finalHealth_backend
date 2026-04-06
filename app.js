@@ -114,6 +114,9 @@ import intentRoutes from "./src/modules/subscription_billing/interface/routes/in
 app.use("/api/subscription-routes-v2", intentRoutes);
 
 app.use("/api/subscription-routes", subscriptoinRoutes);
+// Dashboard overviews
+import dashboardRoutes from "./src/modules/dashboard/interface/dashboardRoutes.js";
+app.use("/api/dashboard-routes", dashboardRoutes);
 
 // ✅ SERVE ALL UPLOADS HERE
 app.use(

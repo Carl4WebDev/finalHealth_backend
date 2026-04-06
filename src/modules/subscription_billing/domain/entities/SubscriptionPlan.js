@@ -56,8 +56,6 @@ export default class SubscriptionPlan {
         if (this.price == null) throw new Error("price required");
         if (this.maxNumberUsers == null)
           throw new Error("maxNumberUsers required");
-        if (this.maxNumberPatient == null)
-          throw new Error("maxNumberPatient required");
         return new SubscriptionPlan(this);
       }
     };

@@ -29,7 +29,7 @@ export default class SubscriptionPaymentRepo extends ISubscriptionPaymentReposit
       WHERE subscription_id = $1
       ORDER BY payment_date DESC;
       `,
-      [subscriptionId]
+      [subscriptionId],
     );
     return res.rows.map((r) => this._toEntity(r));
   }
@@ -44,5 +44,28 @@ export default class SubscriptionPaymentRepo extends ISubscriptionPaymentReposit
       .setPaymentDate(row.payment_date)
       .setStatus(row.status)
       .build();
+  }
+
+  async findByUser(userId) {
+    const sql = `
+    SELECT sp.*
+    FROM subscription_payment sp
+    JOIN user_subscription us
+      ON sp.subscription_id = us.subscription_id
+    WHERE us.user_id = $1
+    ORDER BY sp.payment_date DESC
+  `;
+
+    const { rows } = await db.query(sql, [userId]);
+
+    return rows.map((r) => ({
+      paymentId: r.payment_id,
+      subscriptionId: r.subscription_id,
+      amount: r.amount,
+      paymentMethod: r.payment_method,
+      transactionId: r.transaction_id,
+      paymentDate: r.payment_date,
+      status: r.status,
+    }));
   }
 }

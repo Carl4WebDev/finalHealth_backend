@@ -15,6 +15,7 @@ export default class PatientManagementService {
   // REGISTER PATIENT
   // ============================================================
   async createPatient(dto, actor) {
+    console.log(actor.id);
     if (!actor?.id || !actor?.role) {
       throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     }
@@ -27,14 +28,14 @@ export default class PatientManagementService {
     }
 
     // const patient = this.factory.createPatient(dto);
-    const saved = await this.patientRepo.createPatient(dto);
+    const saved = await this.patientRepo.createPatient(dto, actor.id);
 
     await this.eventBus.publish(
       new PatientRegistered({
         patientId: saved.patientId,
         actorId: actor.id,
         actorRole: actor.role,
-      })
+      }),
     );
 
     return saved;

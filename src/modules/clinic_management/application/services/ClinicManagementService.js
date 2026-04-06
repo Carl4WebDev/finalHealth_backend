@@ -5,6 +5,8 @@ import ClinicRegistered from "../../domain/events/clinics/ClinicRegistered.js";
 import ClinicApproved from "../../domain/events/clinics/ClinicApproved.js";
 import ClinicRejected from "../../domain/events/clinics/ClinicRejected.js";
 
+import SubscriptionLimitService from "../../../../core/subscription/SubscriptionLimitService.js";
+
 import db from "../../../../core/database/db.js";
 
 export default class ClinicManagementService {
@@ -18,24 +20,37 @@ export default class ClinicManagementService {
   // REGISTER CLINIC
   // ============================================================
   async registerClinic(dto, actor) {
+    console.log("REGISTER CLINIC DTO:", dto);
+    console.log("REGISTER CLINIC ACTOR:", actor);
+
     if (!actor?.id || !actor?.role) {
       throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     }
 
+    const snapshot = await SubscriptionLimitService.getPlanSnapshot(actor.id);
+    console.log("PLAN SNAPSHOT:", snapshot);
+
+    const currentClinics = await this.clinicRepo.countByUser(actor.id);
+    console.log("CURRENT CLINICS:", currentClinics);
+
+    await SubscriptionLimitService.enforceClinicLimit(actor.id);
+
     const clinic = this.factory.createClinic(dto);
+    console.log("CLINIC ENTITY:", clinic);
+
     const saved = await this.clinicRepo.save(clinic, actor.id);
+    console.log("SAVED CLINIC:", saved);
 
     await this.eventBus.publish(
       new ClinicRegistered({
         clinicId: saved.clinicId,
         actorId: actor.id,
         actorRole: actor.role,
-      })
+      }),
     );
 
     return saved;
   }
-
   // ============================================================
   // APPROVE CLINIC
   // ============================================================
@@ -50,7 +65,7 @@ export default class ClinicManagementService {
 
     const updated = await this.clinicRepo.updateVerificationStatus(
       clinicId,
-      "Approved"
+      "Approved",
     );
 
     if (!updated) {
@@ -62,7 +77,7 @@ export default class ClinicManagementService {
       new ClinicApproved({
         clinicId,
         actorId: actor.id,
-      })
+      }),
     );
 
     return updated;
@@ -82,7 +97,7 @@ export default class ClinicManagementService {
 
     const updated = await this.clinicRepo.updateVerificationStatus(
       clinicId,
-      "Rejected"
+      "Rejected",
     );
 
     if (!updated) {
@@ -94,7 +109,7 @@ export default class ClinicManagementService {
         clinicId,
         adminId: admin.adminId || admin.id,
         reason,
-      })
+      }),
     );
 
     return updated;
@@ -124,7 +139,7 @@ export default class ClinicManagementService {
   async getAllClinicsOfUserNotAffiliated(doctorId, userId) {
     return await this.clinicRepo.getAllClinicsOfUserNotAffiliated(
       doctorId,
-      userId
+      userId,
     );
   }
   async getClinicSessions(clinicId) {
@@ -134,13 +149,13 @@ export default class ClinicManagementService {
   async createAffiliationDoctorToClinic(doctorId, clinicId) {
     return await this.clinicRepo.createAffiliationDoctorToClinic(
       doctorId,
-      clinicId
+      clinicId,
     );
   }
   async createClinicSession(clinicId, clinicSessionData) {
     return await this.clinicRepo.createClinicSession(
       clinicId,
-      clinicSessionData
+      clinicSessionData,
     );
   }
 
@@ -158,14 +173,14 @@ export default class ClinicManagementService {
       // 1. Get clinic session
       const session = await this.clinicRepo.getClinicSessionById(
         sessionId,
-        trx
+        trx,
       );
 
       if (!session) {
         throw new AppError(
           "Clinic session not found",
           404,
-          "SESSION_NOT_FOUND"
+          "SESSION_NOT_FOUND",
         );
       }
 
