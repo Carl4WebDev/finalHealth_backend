@@ -109,7 +109,7 @@ class SubscriptionLimitService {
           maxClinics: null,
           maxUsers: null,
           canCreateMedicalRecords: true,
-          maxMedicalRecordsPerPatient: null,
+          maxMedicalRecordsPerPatient: 100,
         };
 
       default:
@@ -162,6 +162,26 @@ class SubscriptionLimitService {
     }
   }
 
+  async enforceMedicalRecordLimit(userId, patientId, medRepo) {
+    const { subscription, rules } = await this.getUserRules(userId);
+
+    const current = await medRepo.countMedicalRecordsByPatient(patientId);
+
+    if (
+      rules.maxMedicalRecordsPerPatient !== null &&
+      current >= rules.maxMedicalRecordsPerPatient
+    ) {
+      throw new AppError(
+        `Medical record limit reached for ${subscription.planType} subscription`,
+        403,
+        "MEDICAL_RECORD_LIMIT_REACHED",
+        {
+          current,
+          limit: rules.maxMedicalRecordsPerPatient,
+        },
+      );
+    }
+  }
   async getMedicalRecordLimitPerPatient(userId) {
     const { rules } = await this.getUserRules(userId);
     return rules.maxMedicalRecordsPerPatient;

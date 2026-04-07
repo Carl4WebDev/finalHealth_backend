@@ -1,6 +1,19 @@
 import db from "../../../core/database/db.js";
 
 export default class MedRepo {
+  async countMedicalRecordsByPatient(patientId) {
+    const result = await db.query(
+      `
+      SELECT COUNT(*)::int AS total
+      FROM medical_records
+      WHERE patient_id = $1
+    `,
+      [patientId],
+    );
+
+    return result.rows[0]?.total || 0;
+  }
+
   async getPatientOfDoctorInClinic(doctorId, clinicId, userId) {
     const query = `
     SELECT
@@ -51,6 +64,7 @@ export default class MedRepo {
     const { rows } = await db.query(query, [patientId]);
     return rows[0];
   }
+
   async getPatientMedicalRecords(patientId) {
     // 1. Get the medical record (ROOT)
     const recordQuery = `
@@ -61,6 +75,7 @@ export default class MedRepo {
     const { rows } = await db.query(recordQuery, [patientId]);
     return rows;
   }
+
   async getMedicalRecordsFullDetails(recordId) {
     // 1. Get the medical record (ROOT)
     const recordQuery = `
@@ -147,6 +162,7 @@ export default class MedRepo {
       documents: documents.rows, // ✅ images
     };
   }
+
   async createFullMedicalRecord(data) {
     const client = await db.getClient();
 

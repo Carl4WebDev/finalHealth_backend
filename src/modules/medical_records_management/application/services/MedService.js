@@ -1,5 +1,7 @@
 import Prescription from "../../domain/entities/Prescription.js";
 
+import SubscriptionLimitService from "../../../../core/subscription/SubscriptionLimitService.js";
+
 export default class MedService {
   constructor(medRepo) {
     this.medRepo = medRepo;
@@ -25,17 +27,33 @@ export default class MedService {
   }
 
   async createMedicalRecord(patientId, dto, actor) {
+    console.log("CREATE MEDICAL RECORD PATIENT ID:", patientId);
+    console.log("CREATE MEDICAL RECORD DTO:", dto);
+    console.log("CREATE MEDICAL RECORD ACTOR:", actor);
+
     if (!actor?.id) {
-      throw new AppError("Unauthorized", 401);
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     }
 
-    console.log(dto);
-    return await this.medRepo.createFullMedicalRecord({
+    // 🔥 1. check feature access
+    await SubscriptionLimitService.enforceMedicalRecordAccess(actor.id);
+
+    // 🔥 2. check per-patient limit
+    await SubscriptionLimitService.enforceMedicalRecordLimit(
+      actor.id,
+      patientId,
+      this.medRepo,
+    );
+
+    const created = await this.medRepo.createFullMedicalRecord({
       patientId,
       ...dto,
     });
-  }
 
+    console.log("CREATED MEDICAL RECORD:", created);
+
+    return created;
+  }
   async addDocuments(recordId, files, actor) {
     if (!actor?.id) {
       throw new AppError("Unauthorized", 401);

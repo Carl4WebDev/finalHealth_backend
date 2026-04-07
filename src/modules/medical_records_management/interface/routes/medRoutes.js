@@ -13,7 +13,6 @@ import {
 
 import { requireUser } from "../../../../core/middleware/requireUser.js";
 import authMiddleware from "../../../../core/middleware/Auth.js";
-import requireActiveSubscription from "../../../../core/middleware/RequireActiveSubscription.js";
 
 router.get(
   "/doctor/:doctorId/clinic/:clinicId/patients",
@@ -53,7 +52,6 @@ router.post(
 router.post(
   "/patient/:patientId/medical-records",
   authMiddleware,
-  requireActiveSubscription,
   requireUser,
   createMedicalRecord,
 );
