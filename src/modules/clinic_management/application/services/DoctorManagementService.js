@@ -6,6 +6,8 @@ import DoctorApproved from "../../domain/events/doctors/DoctorApproved.js";
 import DoctorRejected from "../../domain/events/doctors/DoctorRejected.js";
 import DoctorAssignedToClinic from "../../domain/events/doctors/DoctorAssignedToClinic.js";
 
+import SubscriptionLimitService from "../../../../core/subscription/SubscriptionLimitService.js";
+
 export default class DoctorManagementService {
   constructor(doctorRepo, clinicRepo, factory, eventBus) {
     this.doctorRepo = doctorRepo;
@@ -18,19 +20,33 @@ export default class DoctorManagementService {
   // REGISTER DOCTOR
   // ============================================================
   async registerDoctor(dto, actor) {
+    console.log("REGISTER DOCTOR DTO:", dto);
+    console.log("REGISTER DOCTOR ACTOR:", actor);
+
     if (!actor?.id || !actor?.role) {
       throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     }
 
+    const snapshot = await SubscriptionLimitService.getPlanSnapshot(actor.id);
+    console.log("PLAN SNAPSHOT:", snapshot);
+
+    const currentDoctors = await this.doctorRepo.countByUser(actor.id);
+    console.log("CURRENT DOCTORS:", currentDoctors);
+
+    await SubscriptionLimitService.enforceDoctorLimit(actor.id);
+
     const doctor = this.factory.createDoctor(dto);
+    console.log("DOCTOR ENTITY:", doctor);
+
     const saved = await this.doctorRepo.save(doctor, actor.id);
+    console.log("SAVED DOCTOR:", saved);
 
     await this.eventBus.publish(
       new DoctorRegistered({
         doctorId: saved.doctorId,
         actorId: actor.id,
         actorRole: actor.role,
-      })
+      }),
     );
 
     return saved;
@@ -46,7 +62,7 @@ export default class DoctorManagementService {
 
     const updated = await this.doctorRepo.updateVerificationStatus(
       doctorId,
-      "Approved"
+      "Approved",
     );
 
     if (!updated) {
@@ -57,7 +73,7 @@ export default class DoctorManagementService {
       new DoctorApproved({
         doctorId,
         actorId: actor.id,
-      })
+      }),
     );
 
     return updated;
@@ -73,7 +89,7 @@ export default class DoctorManagementService {
 
     const updated = await this.doctorRepo.updateVerificationStatus(
       doctorId,
-      "Rejected"
+      "Rejected",
     );
 
     if (!updated) {
@@ -85,7 +101,7 @@ export default class DoctorManagementService {
         doctorId,
         actorId: actor.id,
         reason,
-      })
+      }),
     );
 
     return updated;
@@ -107,7 +123,7 @@ export default class DoctorManagementService {
         doctorId,
         clinicId,
         actorId: actor.id,
-      })
+      }),
     );
   }
 

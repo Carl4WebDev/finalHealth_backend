@@ -96,8 +96,8 @@ class SubscriptionLimitService {
 
       case "monthly":
         return {
-          maxDoctors: 3,
-          maxClinics: 3,
+          maxDoctors: 5,
+          maxClinics: 5,
           maxUsers: 2,
           canCreateMedicalRecords: true,
           maxMedicalRecordsPerPatient: 50,

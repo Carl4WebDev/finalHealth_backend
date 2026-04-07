@@ -23,18 +23,17 @@ const doctorService = new DoctorManagementService(
   eventBus,
 );
 
-export const registerDoctor = async (req, res) => {
-  try {
-    const dto = new RegisterDoctorDTO(req.body);
+export const registerDoctor = asyncHandler(async (req, res) => {
+  const dto = new RegisterDoctorDTO(req.body);
 
-    const doctor = await doctorService.registerDoctor(dto, req.user);
+  const doctor = await doctorService.registerDoctor(dto, req.user);
 
-    res.status(201).json({ success: true, doctor });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
-
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Doctor registered successfully",
+    data: { doctor },
+  });
+});
 export const approveDoctor = async (req, res) => {
   try {
     const doctorId = Number(req.params.id);
