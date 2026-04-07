@@ -38,7 +38,7 @@ class SubscriptionLimitService {
     const subscription = await this.getActiveSubscription(userId);
     console.log("SUBSCRIPTION IN getUserRules:", subscription);
 
-    if (!subscription.plan_type) {
+    if (!subscription.planType) {
       throw new AppError(
         "Subscription plan type is missing",
         500,
@@ -46,7 +46,7 @@ class SubscriptionLimitService {
       );
     }
 
-    const rules = this.getRulesByPlan(subscription.plan_type);
+    const rules = this.getRulesByPlan(subscription.planType);
     console.log("RULES IN getUserRules:", rules);
 
     return {
@@ -69,13 +69,13 @@ class SubscriptionLimitService {
 
     if (currentClinics >= rules.maxClinics) {
       throw new AppError(
-        `Clinic limit reached for ${subscription.plan_type} subscription`,
+        `Clinic limit reached for ${subscription.planType} subscription`,
         403,
         "CLINIC_LIMIT_REACHED",
         {
           current: currentClinics,
           limit: rules.maxClinics,
-          planType: subscription.plan_type,
+          planType: subscription.planType,
         },
       );
     }
@@ -130,13 +130,13 @@ class SubscriptionLimitService {
 
     if (currentDoctors >= rules.maxDoctors) {
       throw new AppError(
-        `Doctor limit reached for ${subscription.plan_type} subscription`,
+        `Doctor limit reached for ${subscription.planType} subscription`,
         403,
         "DOCTOR_LIMIT_REACHED",
         {
           current: currentDoctors,
           limit: rules.maxDoctors,
-          planType: subscription.plan_type,
+          planType: subscription.planType,
         },
       );
     }
@@ -152,11 +152,11 @@ class SubscriptionLimitService {
 
     if (!rules.canCreateMedicalRecords) {
       throw new AppError(
-        `Medical record creation is not available for ${subscription.plan_type} subscription`,
+        `Medical record creation is not available for ${subscription.planType} subscription`,
         403,
         "MEDICAL_RECORD_ACCESS_DENIED",
         {
-          planType: subscription.plan_type,
+          planType: subscription.planType,
         },
       );
     }
@@ -171,8 +171,8 @@ class SubscriptionLimitService {
     const { subscription, rules } = await this.getUserRules(userId);
 
     return {
-      planType: subscription.plan_type,
-      planName: subscription.plan_name,
+      planType: subscription.planType,
+      planName: subscription.planName,
       rules,
     };
   }
