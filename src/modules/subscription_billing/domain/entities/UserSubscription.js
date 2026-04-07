@@ -3,6 +3,8 @@ export default class UserSubscription {
     this.subscriptionId = builder.subscriptionId;
     this.userId = builder.userId;
     this.planId = builder.planId;
+    this.planName = builder.planName ?? null;
+    this.planType = builder.planType ?? null;
     this.startDate = builder.startDate; // "YYYY-MM-DD"
     this.endDate = builder.endDate; // "YYYY-MM-DD"
     this.autoRenew = builder.autoRenew ?? true;
@@ -17,34 +19,52 @@ export default class UserSubscription {
         this.subscriptionId = v;
         return this;
       }
+
       setUserId(v) {
         this.userId = v;
         return this;
       }
+
       setPlanId(v) {
         this.planId = v;
         return this;
       }
+
+      setPlanName(v) {
+        this.planName = v;
+        return this;
+      }
+
+      setPlanType(v) {
+        this.planType = v;
+        return this;
+      }
+
       setStartDate(v) {
         this.startDate = v;
         return this;
       }
+
       setEndDate(v) {
         this.endDate = v;
         return this;
       }
+
       setAutoRenew(v) {
         this.autoRenew = v;
         return this;
       }
+
       setStatus(v) {
         this.status = v;
         return this;
       }
+
       setRenewalDate(v) {
         this.renewalDate = v;
         return this;
       }
+
       setCreatedAt(v) {
         this.createdAt = v;
         return this;
@@ -65,6 +85,8 @@ export default class UserSubscription {
       .setSubscriptionId(this.subscriptionId)
       .setUserId(this.userId)
       .setPlanId(this.planId)
+      .setPlanName(this.planName)
+      .setPlanType(this.planType)
       .setStartDate(this.startDate)
       .setEndDate(this.endDate)
       .setAutoRenew(this.autoRenew)

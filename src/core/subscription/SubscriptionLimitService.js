@@ -10,19 +10,77 @@ const clinicRepo = new ClinicRepo();
 
 class SubscriptionLimitService {
   async getActiveSubscription(userId) {
+    console.log("getActiveSubscription START:", userId);
+
     let subscription = await userSubscriptionRepo.findActiveByUser(userId);
+    console.log("findActiveByUser RESULT:", subscription);
 
     if (!subscription) {
+      console.log("No active subscription. Creating free subscription...");
       subscription = await userSubscriptionRepo.createFreeSubscription(userId);
+      console.log("createFreeSubscription RESULT:", subscription);
     }
 
     if (!subscription) {
-      throw new AppError("Unable to initialize subscription", 500, {
-        code: "SUBSCRIPTION_INIT_FAILED",
-      });
+      throw new AppError(
+        "Unable to initialize subscription",
+        500,
+        "SUBSCRIPTION_INIT_FAILED",
+      );
     }
 
     return subscription;
+  }
+
+  async getUserRules(userId) {
+    console.log("getUserRules START:", userId);
+
+    const subscription = await this.getActiveSubscription(userId);
+    console.log("SUBSCRIPTION IN getUserRules:", subscription);
+
+    if (!subscription.plan_type) {
+      throw new AppError(
+        "Subscription plan type is missing",
+        500,
+        "SUBSCRIPTION_PLAN_TYPE_MISSING",
+      );
+    }
+
+    const rules = this.getRulesByPlan(subscription.plan_type);
+    console.log("RULES IN getUserRules:", rules);
+
+    return {
+      subscription,
+      rules,
+    };
+  }
+
+  async enforceClinicLimit(userId) {
+    console.log("enforceClinicLimit START:", userId);
+
+    const { subscription, rules } = await this.getUserRules(userId);
+    console.log("SUBSCRIPTION:", subscription);
+    console.log("RULES:", rules);
+
+    if (rules.maxClinics === null) return;
+
+    const currentClinics = await clinicRepo.countByUser(userId);
+    console.log("CURRENT CLINICS:", currentClinics);
+
+    if (currentClinics >= rules.maxClinics) {
+      throw new AppError(
+        `Clinic limit reached for ${subscription.plan_type} subscription`,
+        403,
+        "CLINIC_LIMIT_REACHED",
+        {
+          current: currentClinics,
+          limit: rules.maxClinics,
+          planType: subscription.plan_type,
+        },
+      );
+    }
+
+    console.log("PASSED CLINIC LIMIT");
   }
 
   getRulesByPlan(planType) {
@@ -55,20 +113,12 @@ class SubscriptionLimitService {
         };
 
       default:
-        throw new AppError("Invalid subscription plan type", 400, {
-          code: "INVALID_PLAN_TYPE",
-        });
+        throw new AppError(
+          "Invalid subscription plan type",
+          400,
+          "INVALID_PLAN_TYPE",
+        );
     }
-  }
-
-  async getUserRules(userId) {
-    const subscription = await this.getActiveSubscription(userId);
-    const rules = this.getRulesByPlan(subscription.plan_type);
-
-    return {
-      subscription,
-      rules,
-    };
   }
 
   async enforceDoctorLimit(userId) {
@@ -82,36 +132,11 @@ class SubscriptionLimitService {
       throw new AppError(
         `Doctor limit reached for ${subscription.plan_type} subscription`,
         403,
+        "DOCTOR_LIMIT_REACHED",
         {
-          code: "DOCTOR_LIMIT_REACHED",
-          meta: {
-            current: currentDoctors,
-            limit: rules.maxDoctors,
-            planType: subscription.plan_type,
-          },
-        },
-      );
-    }
-  }
-
-  async enforceClinicLimit(userId) {
-    const { subscription, rules } = await this.getUserRules(userId);
-
-    if (rules.maxClinics === null) return;
-
-    const currentClinics = await clinicRepo.countByUser(userId);
-
-    if (currentClinics >= rules.maxClinics) {
-      throw new AppError(
-        `Clinic limit reached for ${subscription.plan_type} subscription`,
-        403,
-        {
-          code: "CLINIC_LIMIT_REACHED",
-          meta: {
-            current: currentClinics,
-            limit: rules.maxClinics,
-            planType: subscription.plan_type,
-          },
+          current: currentDoctors,
+          limit: rules.maxDoctors,
+          planType: subscription.plan_type,
         },
       );
     }
@@ -129,11 +154,9 @@ class SubscriptionLimitService {
       throw new AppError(
         `Medical record creation is not available for ${subscription.plan_type} subscription`,
         403,
+        "MEDICAL_RECORD_ACCESS_DENIED",
         {
-          code: "MEDICAL_RECORD_ACCESS_DENIED",
-          meta: {
-            planType: subscription.plan_type,
-          },
+          planType: subscription.plan_type,
         },
       );
     }

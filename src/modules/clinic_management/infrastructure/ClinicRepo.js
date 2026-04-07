@@ -4,13 +4,17 @@ import db from "../../../core/database/db.js";
 
 export default class ClinicRepo extends IClinicRepository {
   async countByUser(userId) {
+    console.log("countByUser clinic userId:", userId);
+
     const query = `
-      SELECT COUNT(*)::int AS total
-      FROM clinics
-      WHERE user_id = $1
-    `;
+    SELECT COUNT(*)::int AS total
+    FROM clinics
+    WHERE user_id = $1
+  `;
 
     const { rows } = await db.query(query, [userId]);
+    console.log("countByUser clinic rows:", rows);
+
     return rows[0]?.total || 0;
   }
 

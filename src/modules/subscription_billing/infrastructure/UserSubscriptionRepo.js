@@ -3,6 +3,65 @@ import UserSubscription from "../domain/entities/UserSubscription.js";
 import db from "../../../core/database/db.js";
 
 export default class UserSubscriptionRepo extends IUserSubscriptionRepository {
+  async createFreeSubscription(userId) {
+    console.log("createFreeSubscription START:", userId);
+
+    const client = await db.getClient();
+
+    try {
+      await client.query("BEGIN");
+
+      const freePlanRes = await client.query(`
+      SELECT plan_id
+      FROM subscription_plan
+      WHERE plan_type = 'free'
+        AND isactive = true
+      LIMIT 1
+    `);
+
+      console.log("FREE PLAN RESULT:", freePlanRes.rows);
+
+      if (!freePlanRes.rows[0]) {
+        throw new AppError(
+          "Free subscription plan not found",
+          500,
+          "FREE_PLAN_NOT_FOUND",
+        );
+      }
+
+      const freePlanId = freePlanRes.rows[0].plan_id;
+
+      const insertRes = await client.query(
+        `
+      INSERT INTO user_subscription
+      (user_id, plan_id, start_date, end_date, auto_renew, status, renewal_date)
+      VALUES (
+        $1,
+        $2,
+        CURRENT_DATE,
+        CURRENT_DATE + INTERVAL '7 days',
+        false,
+        'active',
+        NULL
+      )
+      RETURNING *
+      `,
+        [userId, freePlanId],
+      );
+
+      console.log("INSERTED FREE SUB:", insertRes.rows[0]);
+
+      await client.query("COMMIT");
+
+      return await this.findActiveByUser(userId);
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.log("createFreeSubscription ERROR:", error);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
   async save(entity) {
     const query = `
       INSERT INTO user_subscription
@@ -64,34 +123,48 @@ export default class UserSubscriptionRepo extends IUserSubscriptionRepository {
   async findActiveByUser(userId) {
     const res = await db.query(
       `
-      SELECT * FROM user_subscription
-      WHERE user_id = $1
-        AND status = 'active'
-      ORDER BY created_at DESC
+      SELECT
+        us.subscription_id,
+        us.user_id,
+        us.plan_id,
+        us.start_date,
+        us.end_date,
+        us.auto_renew,
+        us.status,
+        us.renewal_date,
+        us.created_at,
+        sp.plan_name,
+        sp.plan_type
+      FROM user_subscription us
+      INNER JOIN subscription_plan sp
+        ON sp.plan_id = us.plan_id
+      WHERE us.user_id = $1
+        AND us.status = 'active'
+      ORDER BY us.created_at DESC
       LIMIT 1;
-      `,
+    `,
       [userId],
     );
+
+    console.log("findActiveByUser");
+    console.log(res.rows[0]);
+
     if (!res.rows.length) return null;
+
     return this._toEntity(res.rows[0]);
   }
-
   _toEntity(row) {
     return new UserSubscription.Builder()
       .setSubscriptionId(row.subscription_id)
       .setUserId(row.user_id)
       .setPlanId(row.plan_id)
-      .setStartDate(
-        row.start_date?.toISOString?.().slice(0, 10) || row.start_date,
-      )
-      .setEndDate(row.end_date?.toISOString?.().slice(0, 10) || row.end_date)
+      .setPlanName(row.plan_name)
+      .setPlanType(row.plan_type)
+      .setStartDate(row.start_date)
+      .setEndDate(row.end_date)
       .setAutoRenew(row.auto_renew)
       .setStatus(row.status)
-      .setRenewalDate(
-        row.renewal_date
-          ? row.renewal_date.toISOString?.().slice(0, 10) || row.renewal_date
-          : null,
-      )
+      .setRenewalDate(row.renewal_date)
       .setCreatedAt(row.created_at)
       .build();
   }
