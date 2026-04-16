@@ -206,7 +206,7 @@ export default class MedRepo {
           data.doctor_id,
           data.clinic_id,
           data.formType || "general",
-          data.formType && data.formType.toLowerCase() === "pre_employment"
+          data.formType?.toLowerCase() === "pre_employment"
             ? data.preEmploymentData || {}
             : null,
         ],

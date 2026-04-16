@@ -43,15 +43,18 @@ export default class MedService {
       this.medRepo,
     );
 
-    console.log("FORM TYPE:", dto.formType);
-    console.log("PRE EMP DATA:", dto.preEmploymentData);
-
-    const created = await this.medRepo.createFullMedicalRecord({
+    const normalizedData = {
       patientId,
       ...dto,
-      formType: dto.formType || "general",
-      preEmploymentData: dto.preEmploymentData || null,
-    });
+      formType: dto.formType ?? dto.form_type ?? "general",
+      preEmploymentData:
+        dto.preEmploymentData ?? dto.pre_employment_data ?? null,
+    };
+
+    console.log("FORM TYPE:", normalizedData.formType);
+    console.log("PRE EMP DATA:", normalizedData.preEmploymentData);
+
+    const created = await this.medRepo.createFullMedicalRecord(normalizedData);
 
     console.log("CREATED MEDICAL RECORD:", created);
 
