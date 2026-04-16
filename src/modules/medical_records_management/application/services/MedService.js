@@ -49,10 +49,19 @@ export default class MedService {
       formType: dto.formType ?? dto.form_type ?? "general",
       preEmploymentData:
         dto.preEmploymentData ?? dto.pre_employment_data ?? null,
+
+      consultation_fee: Number(dto.consultation_fee ?? 0),
+      medicine_fee: Number(dto.medicine_fee ?? 0),
+      lab_fee: Number(dto.lab_fee ?? 0),
+      other_fee: Number(dto.other_fee ?? 0),
     };
 
     console.log("FORM TYPE:", normalizedData.formType);
     console.log("PRE EMP DATA:", normalizedData.preEmploymentData);
+    console.log("CONSULTATION FEE:", normalizedData.consultation_fee);
+    console.log("MEDICINE FEE:", normalizedData.medicine_fee);
+    console.log("LAB FEE:", normalizedData.lab_fee);
+    console.log("OTHER FEE:", normalizedData.other_fee);
 
     const created = await this.medRepo.createFullMedicalRecord(normalizedData);
 

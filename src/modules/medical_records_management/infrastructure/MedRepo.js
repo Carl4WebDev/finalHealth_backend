@@ -177,6 +177,13 @@ export default class MedRepo {
       console.log("REPO FORM TYPE:", data.formType);
       console.log("REPO PRE EMPLOYMENT DATA:", data.preEmploymentData);
 
+      const consultationFee = Number(data.consultation_fee || 0);
+      const medicineFee = Number(data.medicine_fee || 0);
+      const labFee = Number(data.lab_fee || 0);
+      const otherFee = Number(data.other_fee || 0);
+
+      const totalAmount = consultationFee + medicineFee + labFee + otherFee;
+
       /* 1️⃣ MEDICAL RECORD (PARENT) */
       const recordRes = await client.query(
         `
@@ -188,12 +195,17 @@ export default class MedRepo {
         treatment,
         medications,
         assessment,
+        consultation_fee,
+        medicine_fee,
+        lab_fee,
+        other_fee,
+        total_amount,
         doctor_id,
         clinic_id,
         form_type,
         pre_employment_data
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
       RETURNING record_id;
       `,
         [
@@ -203,6 +215,11 @@ export default class MedRepo {
           data.treatment,
           data.medications,
           data.assessment,
+          consultationFee,
+          medicineFee,
+          labFee,
+          otherFee,
+          totalAmount,
           data.doctor_id,
           data.clinic_id,
           data.formType || "general",
