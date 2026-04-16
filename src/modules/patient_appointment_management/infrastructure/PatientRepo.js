@@ -187,7 +187,7 @@ ORDER BY
       .setBackupContact(row.backup_contact)
       .setEmail(row.email)
       .setAddress(row.address)
-      .setPatientTypeId(row.patient_type_id)
+      .setPriorityId(row.priority_id)
       .setCreatedAt(row.created_at)
       .build();
   }

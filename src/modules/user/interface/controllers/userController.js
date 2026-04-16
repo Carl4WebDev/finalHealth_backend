@@ -37,6 +37,8 @@
  */
 
 import UserRepo from "../../infrastructure/repositories/UserRepo.js";
+import UserSubscriptionRepo from "../../../subscription_billing/infrastructure/UserSubscriptionRepo.js";
+
 import AuthTokenService from "../../../../core/middleware/AuthTokenService.js";
 import UserService from "../../application/services/UserService.js";
 
@@ -51,8 +53,15 @@ import eventBus from "../../../../core/events/EventBus.js";
 
 // Wiring dependencies
 const userRepo = new UserRepo();
+const userSubscriptionRepo = new UserSubscriptionRepo();
+
 const authTokenService = new AuthTokenService();
-const userService = new UserService(userRepo, authTokenService, eventBus);
+const userService = new UserService(
+  userRepo,
+  authTokenService,
+  eventBus,
+  userSubscriptionRepo,
+);
 
 // =============================================================
 // REGISTER USER
@@ -73,11 +82,17 @@ export const register = asyncHandler(async (req, res) => {
 // =============================================================
 export const login = asyncHandler(async (req, res) => {
   const dto = new LoginUserDTO(req.body);
-  const { token, user } = await userService.login(dto);
+  const { token, user, subscriptionStatus, subscriptionMessage } =
+    await userService.login(dto);
 
   return sendSuccess(res, {
     message: "Login successful",
-    data: { token, user },
+    data: {
+      token,
+      user,
+      subscriptionStatus,
+      subscriptionMessage,
+    },
   });
 });
 

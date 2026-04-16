@@ -35,19 +35,22 @@ export default class MedService {
       throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     }
 
-    // 🔥 1. check feature access
     await SubscriptionLimitService.enforceMedicalRecordAccess(actor.id);
 
-    // 🔥 2. check per-patient limit
     await SubscriptionLimitService.enforceMedicalRecordLimit(
       actor.id,
       patientId,
       this.medRepo,
     );
 
+    console.log("FORM TYPE:", dto.formType);
+    console.log("PRE EMP DATA:", dto.preEmploymentData);
+
     const created = await this.medRepo.createFullMedicalRecord({
       patientId,
       ...dto,
+      formType: dto.formType || "general",
+      preEmploymentData: dto.preEmploymentData || null,
     });
 
     console.log("CREATED MEDICAL RECORD:", created);

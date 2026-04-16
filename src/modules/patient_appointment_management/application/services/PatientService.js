@@ -15,7 +15,7 @@ export default class PatientManagementService {
   // REGISTER PATIENT
   // ============================================================
   async createPatient(dto, actor) {
-    console.log(actor.id);
+    console.log(dto);
     if (!actor?.id || !actor?.role) {
       throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     }

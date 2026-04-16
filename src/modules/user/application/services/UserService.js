@@ -12,10 +12,11 @@ import UserPasswordChanged from "../../domain/events/user/UserPasswordChanged.js
 import UserProfileImageUpdated from "../../domain/events/user/UserProfileImageUpdated.js";
 
 export default class UserService {
-  constructor(userRepo, authTokenService, eventBus) {
+  constructor(userRepo, authTokenService, eventBus, userSubscriptionRepo) {
     this.userRepo = userRepo;
     this.authTokenService = authTokenService;
     this.eventBus = eventBus;
+    this.userSubscriptionRepo = userSubscriptionRepo;
   }
 
   // ============================================================
@@ -118,10 +119,56 @@ export default class UserService {
       role: "USER",
     });
 
-    // ✅ EMIT EVENT
     await this.eventBus.publish(new UserLoggedIn({ userId: user.userId }));
 
-    return { token, user };
+    console.log("LOGIN USER ID:", user.userId);
+
+    const latestSubscription = await this.userSubscriptionRepo.findLatestByUser(
+      user.userId,
+    );
+
+    console.log("LATEST SUBSCRIPTION FROM LOGIN:", latestSubscription);
+
+    let subscriptionStatus = "none";
+    let subscriptionMessage = null;
+
+    if (latestSubscription) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const endDate = latestSubscription.endDate
+        ? new Date(latestSubscription.endDate)
+        : null;
+
+      if (endDate) {
+        endDate.setHours(0, 0, 0, 0);
+      }
+
+      const isExpired =
+        latestSubscription.status !== "active" || (endDate && endDate < today);
+
+      console.log("IS EXPIRED:", isExpired);
+      console.log("LATEST STATUS:", latestSubscription.status);
+      console.log("LATEST END DATE:", latestSubscription.endDate);
+
+      if (isExpired) {
+        subscriptionStatus = "expired";
+        subscriptionMessage =
+          "Your subscription has expired. Please renew to continue.";
+      } else {
+        subscriptionStatus = "active";
+      }
+    }
+
+    console.log("LOGIN RESPONSE SUBSCRIPTION STATUS:", subscriptionStatus);
+    console.log("LOGIN RESPONSE SUBSCRIPTION MESSAGE:", subscriptionMessage);
+
+    return {
+      token,
+      user,
+      subscriptionStatus,
+      subscriptionMessage,
+    };
   }
 
   // ============================================================

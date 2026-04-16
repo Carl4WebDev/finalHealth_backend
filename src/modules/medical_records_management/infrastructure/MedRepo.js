@@ -77,7 +77,6 @@ export default class MedRepo {
   }
 
   async getMedicalRecordsFullDetails(recordId) {
-    // 1. Get the medical record (ROOT)
     const recordQuery = `
     SELECT
       mr.record_id,
@@ -97,6 +96,8 @@ export default class MedRepo {
       mr.total_amount,
       mr.doctor_id,
       mr.clinic_id,
+      mr.form_type,
+      mr.pre_employment_data,
       mr.created_at,
       d.f_name || ' ' || d.l_name AS doctor_name,
       c.clinic_name
@@ -109,7 +110,7 @@ export default class MedRepo {
     const recordRes = await db.query(recordQuery, [recordId]);
 
     if (recordRes.rows.length === 0) {
-      return null; // or throw NotFoundError
+      return null;
     }
 
     const medicalRecord = recordRes.rows[0];
@@ -142,39 +143,57 @@ export default class MedRepo {
         recordId,
       ]),
       db.query(
-        `SELECT document_id, document_img_path, uploaded_at, uploaded_by
-     FROM medical_record_documents
-     WHERE record_id = $1
-     ORDER BY uploaded_at DESC`,
+        `
+      SELECT document_id, document_img_path, uploaded_at, uploaded_by
+      FROM medical_record_documents
+      WHERE record_id = $1
+      ORDER BY uploaded_at DESC
+      `,
         [recordId],
       ),
     ]);
 
-    // 3. Return ONE clean aggregate
     return {
-      medicalRecord,
+      medicalRecord: {
+        ...medicalRecord,
+        pre_employment_data: medicalRecord.pre_employment_data || null,
+      },
       vitalSigns: vitalSigns.rows,
       prescriptions: prescriptions.rows,
       labResults: labResults.rows,
       referrals: referrals.rows,
       followups: followups.rows,
       certificates: certificates.rows,
-      documents: documents.rows, // ✅ images
+      documents: documents.rows,
     };
   }
-
   async createFullMedicalRecord(data) {
     const client = await db.getClient();
 
     try {
       await client.query("BEGIN");
 
+      console.log("REPO CREATE FULL MEDICAL RECORD DATA:", data);
+      console.log("REPO FORM TYPE:", data.formType);
+      console.log("REPO PRE EMPLOYMENT DATA:", data.preEmploymentData);
+
       /* 1️⃣ MEDICAL RECORD (PARENT) */
       const recordRes = await client.query(
         `
       INSERT INTO medical_records
-      (patient_id, record_date, diagnosis, treatment, medications, assessment, doctor_id, clinic_id)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      (
+        patient_id,
+        record_date,
+        diagnosis,
+        treatment,
+        medications,
+        assessment,
+        doctor_id,
+        clinic_id,
+        form_type,
+        pre_employment_data
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
       RETURNING record_id;
       `,
         [
@@ -186,6 +205,10 @@ export default class MedRepo {
           data.assessment,
           data.doctor_id,
           data.clinic_id,
+          data.formType || "general",
+          data.formType && data.formType.toLowerCase() === "pre_employment"
+            ? data.preEmploymentData || {}
+            : null,
         ],
       );
 
@@ -294,7 +317,6 @@ export default class MedRepo {
       client.release();
     }
   }
-
   async insertDocuments(docs) {
     const query = `
     INSERT INTO medical_record_documents

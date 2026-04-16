@@ -120,29 +120,60 @@ export default class UserSubscriptionRepo extends IUserSubscriptionRepository {
     return this._toEntity(res.rows[0]);
   }
 
+  async findLatestByUser(userId) {
+    const res = await db.query(
+      `
+    SELECT
+      us.subscription_id,
+      us.user_id,
+      us.plan_id,
+      us.start_date,
+      us.end_date,
+      us.auto_renew,
+      us.status,
+      us.renewal_date,
+      us.created_at,
+      sp.plan_name,
+      sp.plan_type
+    FROM user_subscription us
+    INNER JOIN subscription_plan sp
+      ON sp.plan_id = us.plan_id
+    WHERE us.user_id = $1
+    ORDER BY us.created_at DESC
+    LIMIT 1;
+    `,
+      [userId],
+    );
+
+    if (!res.rows.length) return null;
+
+    return this._toEntity(res.rows[0]);
+  }
+
   async findActiveByUser(userId) {
     const res = await db.query(
       `
-      SELECT
-        us.subscription_id,
-        us.user_id,
-        us.plan_id,
-        us.start_date,
-        us.end_date,
-        us.auto_renew,
-        us.status,
-        us.renewal_date,
-        us.created_at,
-        sp.plan_name,
-        sp.plan_type
-      FROM user_subscription us
-      INNER JOIN subscription_plan sp
-        ON sp.plan_id = us.plan_id
-      WHERE us.user_id = $1
-        AND us.status = 'active'
-      ORDER BY us.created_at DESC
-      LIMIT 1;
-    `,
+    SELECT
+      us.subscription_id,
+      us.user_id,
+      us.plan_id,
+      us.start_date,
+      us.end_date,
+      us.auto_renew,
+      us.status,
+      us.renewal_date,
+      us.created_at,
+      sp.plan_name,
+      sp.plan_type
+    FROM user_subscription us
+    INNER JOIN subscription_plan sp
+      ON sp.plan_id = us.plan_id
+    WHERE us.user_id = $1
+      AND us.status = 'active'
+      AND us.end_date >= CURRENT_DATE
+    ORDER BY us.created_at DESC
+    LIMIT 1;
+  `,
       [userId],
     );
 

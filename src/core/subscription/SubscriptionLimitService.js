@@ -9,16 +9,71 @@ const doctorRepo = new DoctorRepo();
 const clinicRepo = new ClinicRepo();
 
 class SubscriptionLimitService {
+  isSubscriptionExpired(subscription) {
+    if (!subscription) return true;
+
+    if (subscription.status && subscription.status !== "active") {
+      return true;
+    }
+
+    if (!subscription.endDate) {
+      return false;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(subscription.endDate);
+    endDate.setHours(0, 0, 0, 0);
+
+    return endDate < today;
+  }
+
+  enforceSubscriptionPeriod(subscription) {
+    if (this.isSubscriptionExpired(subscription)) {
+      throw new AppError(
+        "Subscription period has ended. Please renew your subscription to continue.",
+        403,
+        "SUBSCRIPTION_EXPIRED",
+        {
+          planType: subscription?.planType ?? null,
+          status: subscription?.status ?? null,
+          endDate: subscription?.endDate ?? null,
+        },
+      );
+    }
+  }
+
   async getActiveSubscription(userId) {
     console.log("getActiveSubscription START:", userId);
 
     let subscription = await userSubscriptionRepo.findActiveByUser(userId);
     console.log("findActiveByUser RESULT:", subscription);
 
+    // 🔴 NEW: check latest subscription if no active found
     if (!subscription) {
-      console.log("No active subscription. Creating free subscription...");
+      console.log("No active subscription. Checking latest subscription...");
+
+      const latest = await userSubscriptionRepo.findLatestByUser(userId);
+      console.log("LATEST SUBSCRIPTION:", latest);
+
+      // If user HAD a subscription but now expired → THROW (do NOT downgrade)
+      if (latest) {
+        throw new AppError(
+          "Your subscription has expired. Please renew to continue.",
+          403,
+          "SUBSCRIPTION_EXPIRED",
+          {
+            planType: latest.planType,
+            status: latest.status,
+            endDate: latest.endDate,
+          },
+        );
+      }
+
+      // Only create free if user NEVER had subscription
+      console.log("No subscription history. Creating free subscription...");
       subscription = await userSubscriptionRepo.createFreeSubscription(userId);
-      console.log("createFreeSubscription RESULT:", subscription);
     }
 
     if (!subscription) {
@@ -28,6 +83,8 @@ class SubscriptionLimitService {
         "SUBSCRIPTION_INIT_FAILED",
       );
     }
+
+    this.enforceSubscriptionPeriod(subscription);
 
     return subscription;
   }
@@ -182,6 +239,7 @@ class SubscriptionLimitService {
       );
     }
   }
+
   async getMedicalRecordLimitPerPatient(userId) {
     const { rules } = await this.getUserRules(userId);
     return rules.maxMedicalRecordsPerPatient;
