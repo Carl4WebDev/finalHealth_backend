@@ -353,4 +353,119 @@ export default class MedRepo {
     );
     return res.rows[0];
   }
+
+  // Diagnosis
+  async getAllDiagnoses(userId) {
+    const res = await db.query(
+      `
+    SELECT
+      diagnosis_id,
+      diagnosis_name,
+      created_at
+    FROM diagnosis_master
+    WHERE user_id = $1
+    ORDER BY diagnosis_name ASC
+    `,
+      [userId],
+    );
+
+    return res.rows;
+  }
+
+  async createDiagnosis(userId, diagnosisName) {
+    const res = await db.query(
+      `
+    INSERT INTO diagnosis_master (user_id, diagnosis_name)
+    VALUES ($1, $2)
+    RETURNING diagnosis_id, diagnosis_name, created_at
+    `,
+      [userId, diagnosisName],
+    );
+
+    return res.rows[0];
+  }
+
+  async updateDiagnosis(userId, diagnosisId, diagnosisName) {
+    const res = await db.query(
+      `
+    UPDATE diagnosis_master
+    SET diagnosis_name = $1
+    WHERE diagnosis_id = $2 AND user_id = $3
+    RETURNING diagnosis_id, diagnosis_name, created_at
+    `,
+      [diagnosisName, diagnosisId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async deleteDiagnosis(userId, diagnosisId) {
+    const res = await db.query(
+      `
+    DELETE FROM diagnosis_master
+    WHERE diagnosis_id = $1 AND user_id = $2
+    RETURNING diagnosis_id
+    `,
+      [diagnosisId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async getAllTreatments(userId) {
+    const res = await db.query(
+      `
+    SELECT
+      treatment_id,
+      treatment_name,
+      created_at
+    FROM treatment_master
+    WHERE user_id = $1
+    ORDER BY treatment_name ASC
+    `,
+      [userId],
+    );
+
+    return res.rows;
+  }
+
+  async createTreatment(userId, treatmentName) {
+    const res = await db.query(
+      `
+    INSERT INTO treatment_master (user_id, treatment_name)
+    VALUES ($1, $2)
+    RETURNING treatment_id, treatment_name, created_at
+    `,
+      [userId, treatmentName],
+    );
+
+    return res.rows[0];
+  }
+
+  async updateTreatment(userId, treatmentId, treatmentName) {
+    const res = await db.query(
+      `
+    UPDATE treatment_master
+    SET treatment_name = $1
+    WHERE treatment_id = $2 AND user_id = $3
+    RETURNING treatment_id, treatment_name, created_at
+    `,
+      [treatmentName, treatmentId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async deleteTreatment(userId, treatmentId) {
+    const res = await db.query(
+      `
+    DELETE FROM treatment_master
+    WHERE treatment_id = $1 AND user_id = $2
+    RETURNING treatment_id
+    `,
+      [treatmentId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
 }

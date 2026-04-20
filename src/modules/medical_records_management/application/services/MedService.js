@@ -87,4 +87,184 @@ export default class MedService {
 
     await this.medRepo.insertDocuments(docs);
   }
+
+  async getAllDiagnoses(actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    return await this.medRepo.getAllDiagnoses(actor.id);
+  }
+
+  async createDiagnosis(dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const diagnosisName = dto?.diagnosisName?.trim();
+
+    if (!diagnosisName) {
+      throw new AppError(
+        "Diagnosis name is required",
+        400,
+        "DIAGNOSIS_NAME_REQUIRED",
+      );
+    }
+
+    try {
+      return await this.medRepo.createDiagnosis(actor.id, diagnosisName);
+    } catch (err) {
+      if (err.code === "23505") {
+        throw new AppError(
+          "Diagnosis already exists",
+          409,
+          "DIAGNOSIS_ALREADY_EXISTS",
+        );
+      }
+      throw err;
+    }
+  }
+
+  async updateDiagnosis(diagnosisId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const diagnosisName = dto?.diagnosisName?.trim();
+
+    if (!diagnosisName) {
+      throw new AppError(
+        "Diagnosis name is required",
+        400,
+        "DIAGNOSIS_NAME_REQUIRED",
+      );
+    }
+
+    try {
+      const updated = await this.medRepo.updateDiagnosis(
+        actor.id,
+        diagnosisId,
+        diagnosisName,
+      );
+
+      if (!updated) {
+        throw new AppError("Diagnosis not found", 404, "DIAGNOSIS_NOT_FOUND");
+      }
+
+      return updated;
+    } catch (err) {
+      if (err.code === "23505") {
+        throw new AppError(
+          "Diagnosis already exists",
+          409,
+          "DIAGNOSIS_ALREADY_EXISTS",
+        );
+      }
+      throw err;
+    }
+  }
+
+  async deleteDiagnosis(diagnosisId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const deleted = await this.medRepo.deleteDiagnosis(actor.id, diagnosisId);
+
+    if (!deleted) {
+      throw new AppError("Diagnosis not found", 404, "DIAGNOSIS_NOT_FOUND");
+    }
+
+    return deleted;
+  }
+
+  async getAllTreatments(actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    return await this.medRepo.getAllTreatments(actor.id);
+  }
+
+  async createTreatment(dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const treatmentName = dto?.treatmentName?.trim();
+
+    if (!treatmentName) {
+      throw new AppError(
+        "Treatment name is required",
+        400,
+        "TREATMENT_NAME_REQUIRED",
+      );
+    }
+
+    try {
+      return await this.medRepo.createTreatment(actor.id, treatmentName);
+    } catch (err) {
+      if (err.code === "23505") {
+        throw new AppError(
+          "Treatment already exists",
+          409,
+          "TREATMENT_ALREADY_EXISTS",
+        );
+      }
+      throw err;
+    }
+  }
+
+  async updateTreatment(treatmentId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const treatmentName = dto?.treatmentName?.trim();
+
+    if (!treatmentName) {
+      throw new AppError(
+        "Treatment name is required",
+        400,
+        "TREATMENT_NAME_REQUIRED",
+      );
+    }
+
+    try {
+      const updated = await this.medRepo.updateTreatment(
+        actor.id,
+        treatmentId,
+        treatmentName,
+      );
+
+      if (!updated) {
+        throw new AppError("Treatment not found", 404, "TREATMENT_NOT_FOUND");
+      }
+
+      return updated;
+    } catch (err) {
+      if (err.code === "23505") {
+        throw new AppError(
+          "Treatment already exists",
+          409,
+          "TREATMENT_ALREADY_EXISTS",
+        );
+      }
+      throw err;
+    }
+  }
+
+  async deleteTreatment(treatmentId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const deleted = await this.medRepo.deleteTreatment(actor.id, treatmentId);
+
+    if (!deleted) {
+      throw new AppError("Treatment not found", 404, "TREATMENT_NOT_FOUND");
+    }
+
+    return deleted;
+  }
 }

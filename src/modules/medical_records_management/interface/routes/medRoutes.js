@@ -9,6 +9,14 @@ import {
   getMedicalRecordsFullDetails,
   uploadMedicalRecordDocuments,
   createMedicalRecord,
+  getAllDiagnoses,
+  createDiagnosis,
+  updateDiagnosis,
+  deleteDiagnosis,
+  getAllTreatments,
+  createTreatment,
+  updateTreatment,
+  deleteTreatment,
 } from "../controllers/MedController.js";
 
 import { requireUser } from "../../../../core/middleware/requireUser.js";
@@ -55,5 +63,16 @@ router.post(
   requireUser,
   createMedicalRecord,
 );
+
+// diagnosis and treatment management
+router.get("/diagnoses", authMiddleware, requireUser, getAllDiagnoses);
+router.post("/diagnoses", authMiddleware, requireUser, createDiagnosis);
+router.patch("/diagnoses/:id", authMiddleware, requireUser, updateDiagnosis);
+router.delete("/diagnoses/:id", authMiddleware, requireUser, deleteDiagnosis);
+
+router.get("/treatments", authMiddleware, requireUser, getAllTreatments);
+router.post("/treatments", authMiddleware, requireUser, createTreatment);
+router.patch("/treatments/:id", authMiddleware, requireUser, updateTreatment);
+router.delete("/treatments/:id", authMiddleware, requireUser, deleteTreatment);
 
 export default router;
