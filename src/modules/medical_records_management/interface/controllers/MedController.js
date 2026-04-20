@@ -1,5 +1,6 @@
 import { asyncHandler } from "../../../../core/middleware/asyncHandler.js";
 import { sendSuccess } from "../../../../core/http/apiResponse.js";
+import AppError from "../../../../core/errors/AppError.js";
 
 import MedService from "../../application/services/MedService.js";
 import MedRepo from "../../infrastructure/MedRepo.js";
@@ -163,6 +164,74 @@ export const deleteTreatment = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, {
     message: "Treatment deleted successfully",
+    data: null,
+  });
+});
+
+// Vital Signs
+export const getAllVitalSignsByPatient = asyncHandler(async (req, res) => {
+  const patientId = Number(req.params.patientId);
+
+  const vitalSigns = await medService.getAllVitalSignsByPatient(
+    patientId,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    message: "Vital signs fetched successfully",
+    data: { vitalSigns },
+  });
+});
+
+export const getVitalSignById = asyncHandler(async (req, res) => {
+  const vitalId = Number(req.params.vitalId);
+
+  const vitalSign = await medService.getVitalSignById(vitalId, req.user);
+
+  return sendSuccess(res, {
+    message: "Vital sign fetched successfully",
+    data: { vitalSign },
+  });
+});
+
+export const createVitalSign = asyncHandler(async (req, res) => {
+  const patientId = Number(req.params.patientId);
+
+  const vitalSign = await medService.createVitalSign(
+    patientId,
+    req.body,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Vital sign created successfully",
+    data: { vitalSign },
+  });
+});
+
+export const updateVitalSign = asyncHandler(async (req, res) => {
+  const vitalId = Number(req.params.vitalId);
+
+  const vitalSign = await medService.updateVitalSign(
+    vitalId,
+    req.body,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    message: "Vital sign updated successfully",
+    data: { vitalSign },
+  });
+});
+
+export const deleteVitalSign = asyncHandler(async (req, res) => {
+  const vitalId = Number(req.params.vitalId);
+
+  await medService.deleteVitalSign(vitalId, req.user);
+
+  return sendSuccess(res, {
+    message: "Vital sign deleted successfully",
     data: null,
   });
 });

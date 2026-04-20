@@ -17,6 +17,13 @@ import {
   createTreatment,
   updateTreatment,
   deleteTreatment,
+
+  // VITAL SIGNS
+  getAllVitalSignsByPatient,
+  getVitalSignById,
+  createVitalSign,
+  updateVitalSign,
+  deleteVitalSign,
 } from "../controllers/MedController.js";
 
 import { requireUser } from "../../../../core/middleware/requireUser.js";
@@ -74,5 +81,26 @@ router.get("/treatments", authMiddleware, requireUser, getAllTreatments);
 router.post("/treatments", authMiddleware, requireUser, createTreatment);
 router.patch("/treatments/:id", authMiddleware, requireUser, updateTreatment);
 router.delete("/treatments/:id", authMiddleware, requireUser, deleteTreatment);
+
+// vital signs management
+router.get(
+  "/patient/:patientId/vitals",
+  authMiddleware,
+  requireUser,
+  getAllVitalSignsByPatient,
+);
+
+router.get("/vitals/:vitalId", authMiddleware, requireUser, getVitalSignById);
+
+router.post(
+  "/patient/:patientId/vitals",
+  authMiddleware,
+  requireUser,
+  createVitalSign,
+);
+
+router.patch("/vitals/:vitalId", authMiddleware, requireUser, updateVitalSign);
+
+router.delete("/vitals/:vitalId", authMiddleware, requireUser, deleteVitalSign);
 
 export default router;

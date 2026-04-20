@@ -1,6 +1,7 @@
 import Prescription from "../../domain/entities/Prescription.js";
 
 import SubscriptionLimitService from "../../../../core/subscription/SubscriptionLimitService.js";
+import AppError from "../../../../core/errors/AppError.js";
 
 export default class MedService {
   constructor(medRepo) {
@@ -263,6 +264,148 @@ export default class MedService {
 
     if (!deleted) {
       throw new AppError("Treatment not found", 404, "TREATMENT_NOT_FOUND");
+    }
+
+    return deleted;
+  }
+
+  // Vital Signs
+  async getAllVitalSignsByPatient(patientId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    return await this.medRepo.getAllVitalSignsByPatient(patientId);
+  }
+
+  async getVitalSignById(vitalId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const vitalSign = await this.medRepo.getVitalSignById(vitalId);
+
+    if (!vitalSign) {
+      throw new AppError("Vital sign not found", 404, "VITAL_SIGN_NOT_FOUND");
+    }
+
+    return vitalSign;
+  }
+
+  async createVitalSign(patientId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const appointmentId = Number(dto?.appointmentId ?? dto?.appointment_id);
+
+    if (!patientId) {
+      throw new AppError("Patient ID is required", 400, "PATIENT_ID_REQUIRED");
+    }
+
+    if (!appointmentId) {
+      throw new AppError(
+        "Appointment ID is required",
+        400,
+        "APPOINTMENT_ID_REQUIRED",
+      );
+    }
+
+    const normalizedData = {
+      patientId: Number(patientId),
+      appointmentId,
+      bloodPressure: dto?.bloodPressure ?? dto?.blood_pressure ?? null,
+      heartRate:
+        dto?.heartRate !== undefined && dto?.heartRate !== null
+          ? Number(dto.heartRate)
+          : dto?.heart_rate !== undefined && dto?.heart_rate !== null
+            ? Number(dto.heart_rate)
+            : null,
+      temperature: dto?.temperature ?? null,
+      oxygenSaturation:
+        dto?.oxygenSaturation !== undefined && dto?.oxygenSaturation !== null
+          ? Number(dto.oxygenSaturation)
+          : dto?.oxygen_saturation !== undefined &&
+              dto?.oxygen_saturation !== null
+            ? Number(dto.oxygen_saturation)
+            : null,
+      weight:
+        dto?.weight !== undefined && dto?.weight !== null
+          ? Number(dto.weight)
+          : null,
+      vitalImgPath: dto?.vitalImgPath ?? dto?.vital_img_path ?? null,
+      medicalRecordId: dto?.medicalRecordId ?? dto?.medical_record_id ?? null,
+    };
+
+    return await this.medRepo.createVitalSign(normalizedData);
+  }
+
+  async updateVitalSign(vitalId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const existing = await this.medRepo.getVitalSignById(vitalId);
+
+    if (!existing) {
+      throw new AppError("Vital sign not found", 404, "VITAL_SIGN_NOT_FOUND");
+    }
+
+    const normalizedData = {
+      appointmentId: Number(
+        dto?.appointmentId ?? dto?.appointment_id ?? existing.appointment_id,
+      ),
+      patientId: Number(
+        dto?.patientId ?? dto?.patient_id ?? existing.patient_id,
+      ),
+      bloodPressure:
+        dto?.bloodPressure ??
+        dto?.blood_pressure ??
+        existing.blood_pressure ??
+        null,
+      heartRate:
+        dto?.heartRate !== undefined && dto?.heartRate !== null
+          ? Number(dto.heartRate)
+          : dto?.heart_rate !== undefined && dto?.heart_rate !== null
+            ? Number(dto.heart_rate)
+            : existing.heart_rate,
+      temperature:
+        dto?.temperature !== undefined ? dto.temperature : existing.temperature,
+      oxygenSaturation:
+        dto?.oxygenSaturation !== undefined && dto?.oxygenSaturation !== null
+          ? Number(dto.oxygenSaturation)
+          : dto?.oxygen_saturation !== undefined &&
+              dto?.oxygen_saturation !== null
+            ? Number(dto.oxygen_saturation)
+            : existing.oxygen_saturation,
+      weight:
+        dto?.weight !== undefined && dto?.weight !== null
+          ? Number(dto.weight)
+          : existing.weight,
+      vitalImgPath:
+        dto?.vitalImgPath ??
+        dto?.vital_img_path ??
+        existing.vital_img_path ??
+        null,
+      medicalRecordId:
+        dto?.medicalRecordId ??
+        dto?.medical_record_id ??
+        existing.medical_record_id ??
+        null,
+    };
+
+    return await this.medRepo.updateVitalSign(vitalId, normalizedData);
+  }
+
+  async deleteVitalSign(vitalId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const deleted = await this.medRepo.deleteVitalSign(vitalId);
+
+    if (!deleted) {
+      throw new AppError("Vital sign not found", 404, "VITAL_SIGN_NOT_FOUND");
     }
 
     return deleted;

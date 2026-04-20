@@ -468,4 +468,158 @@ export default class MedRepo {
 
     return res.rows[0] || null;
   }
+
+  // Vital Signs
+  async getAllVitalSignsByPatient(patientId) {
+    const res = await db.query(
+      `
+      SELECT
+        vital_id,
+        appointment_id,
+        patient_id,
+        blood_pressure,
+        heart_rate,
+        temperature,
+        oxygen_saturation,
+        weight,
+        vital_img_path,
+        created_at,
+        medical_record_id
+      FROM vital_signs
+      WHERE patient_id = $1
+      ORDER BY created_at DESC, vital_id DESC
+      `,
+      [patientId],
+    );
+
+    return res.rows;
+  }
+
+  async getVitalSignById(vitalId) {
+    const res = await db.query(
+      `
+      SELECT
+        vital_id,
+        appointment_id,
+        patient_id,
+        blood_pressure,
+        heart_rate,
+        temperature,
+        oxygen_saturation,
+        weight,
+        vital_img_path,
+        created_at,
+        medical_record_id
+      FROM vital_signs
+      WHERE vital_id = $1
+      LIMIT 1
+      `,
+      [vitalId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async createVitalSign(data) {
+    const res = await db.query(
+      `
+      INSERT INTO vital_signs
+      (
+        appointment_id,
+        patient_id,
+        blood_pressure,
+        heart_rate,
+        temperature,
+        oxygen_saturation,
+        weight,
+        vital_img_path,
+        medical_record_id
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      RETURNING
+        vital_id,
+        appointment_id,
+        patient_id,
+        blood_pressure,
+        heart_rate,
+        temperature,
+        oxygen_saturation,
+        weight,
+        vital_img_path,
+        created_at,
+        medical_record_id
+      `,
+      [
+        data.appointmentId,
+        data.patientId,
+        data.bloodPressure,
+        data.heartRate,
+        data.temperature,
+        data.oxygenSaturation,
+        data.weight,
+        data.vitalImgPath,
+        data.medicalRecordId,
+      ],
+    );
+
+    return res.rows[0];
+  }
+
+  async updateVitalSign(vitalId, data) {
+    const res = await db.query(
+      `
+      UPDATE vital_signs
+      SET
+        appointment_id = $1,
+        patient_id = $2,
+        blood_pressure = $3,
+        heart_rate = $4,
+        temperature = $5,
+        oxygen_saturation = $6,
+        weight = $7,
+        vital_img_path = $8,
+        medical_record_id = $9
+      WHERE vital_id = $10
+      RETURNING
+        vital_id,
+        appointment_id,
+        patient_id,
+        blood_pressure,
+        heart_rate,
+        temperature,
+        oxygen_saturation,
+        weight,
+        vital_img_path,
+        created_at,
+        medical_record_id
+      `,
+      [
+        data.appointmentId,
+        data.patientId,
+        data.bloodPressure,
+        data.heartRate,
+        data.temperature,
+        data.oxygenSaturation,
+        data.weight,
+        data.vitalImgPath,
+        data.medicalRecordId,
+        vitalId,
+      ],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async deleteVitalSign(vitalId) {
+    const res = await db.query(
+      `
+      DELETE FROM vital_signs
+      WHERE vital_id = $1
+      RETURNING vital_id
+      `,
+      [vitalId],
+    );
+
+    return res.rows[0] || null;
+  }
 }
