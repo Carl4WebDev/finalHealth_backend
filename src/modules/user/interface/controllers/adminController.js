@@ -64,3 +64,14 @@ export const getAllSubscribers = asyncHandler(async (req, res) => {
     data: { subscribers },
   });
 });
+
+export const getRevenue = asyncHandler(async (req, res) => {
+  // Call the service (we will create this next)
+  const revenueData = await adminService.getCustomerRevenue();
+
+  return sendSuccess(res, {
+    message: "Revenue data fetched successfully",
+    data: revenueData, 
+  });
+});
+

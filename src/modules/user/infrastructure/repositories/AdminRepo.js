@@ -108,4 +108,34 @@ export default class AdminRepo extends IAdminRepository {
     const { rows } = await db.query(query);
     return rows;
   }
+
+  async getCustomerRevenue() {
+    const query = `
+        SELECT 
+            up.user_id,
+            up.f_name, 
+            up.l_name, 
+            up.profile_img_path,
+            spn.plan_name,
+            pay.amount,
+            pay.payment_method,
+            pay.transaction_id,
+            pay.payment_date,
+            pay.status as payment_status
+        FROM public.user_profile up
+        JOIN public.user_subscription us ON up.user_id = us.user_id
+        JOIN public.subscription_plan spn ON us.plan_id = spn.plan_id
+        JOIN public.subscription_payment pay ON us.subscription_id = pay.subscription_id
+        ORDER BY pay.payment_date DESC;
+    `;
+
+    try {
+        // Use the imported 'db' instance directly
+        const { rows } = await db.query(query); 
+        return rows;
+    } catch (error) {
+        console.error("Database Error in AdminRepo (getCustomerRevenue):", error);
+        throw error;
+    }
+  }
 }
