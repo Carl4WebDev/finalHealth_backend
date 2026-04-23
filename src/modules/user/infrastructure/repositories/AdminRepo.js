@@ -138,4 +138,64 @@ export default class AdminRepo extends IAdminRepository {
         throw error;
     }
   }
+
+async getDashboardSummary() {
+  // 1. Fetching all the counts for the Overview and Today's Summary cards
+  const statsQuery = `
+    SELECT 
+      (SELECT COUNT(*) FROM public.users) as total_users,
+      (SELECT COUNT(*) FROM public.doctors WHERE is_verified = true) as verified_doctors,
+      (SELECT COUNT(*) FROM public.user_subscription WHERE status = 'active') as active_subscribers,
+      (SELECT COUNT(*) FROM public.users WHERE created_at >= NOW() - INTERVAL '30 days') as new_signups,
+      (SELECT COUNT(*) FROM public.users WHERE created_at >= CURRENT_DATE) as today_new_users,
+      (SELECT COUNT(*) FROM public.appointments WHERE appointment_date = CURRENT_DATE) as today_appointments,
+      (SELECT COALESCE(SUM(amount), 0) FROM public.subscription_payment WHERE status = 'completed' AND payment_date >= CURRENT_DATE) as today_revenue
+  `;
+
+  /* 2. The "Activity Feed" Query
+     This combines data from 3 different tables into one list, sorted by time.
+  */
+  const activityQuery = `
+  SELECT description, sort_date FROM (
+    -- New User Registrations
+    (SELECT concat('New user registered: ', email) as description, created_at as sort_date 
+     FROM public.users)
+    UNION ALL
+    -- New Appointments (Ensure this pulls by created_at, regardless of queue status)
+    (SELECT concat('New appointment booked for Dr. ', l_name) as description, a.created_at as sort_date 
+     FROM public.appointments a
+     JOIN public.doctors d ON a.doctor_id = d.doctor_id)
+    UNION ALL
+    -- Completed Payments
+    (SELECT concat('Payment Received: P', amount) as description, payment_date as sort_date 
+     FROM public.subscription_payment WHERE status = 'completed')
+  ) AS combined_activity
+  ORDER BY sort_date DESC 
+  LIMIT 5
+`;
+
+  try {
+    const statsResult = await db.query(statsQuery);
+    const activityResult = await db.query(activityQuery);
+    
+    const data = statsResult.rows[0];
+
+    return {
+      total_users: parseInt(data.total_users),
+      verified_doctors: parseInt(data.verified_doctors),
+      active_subscribers: parseInt(data.active_subscribers),
+      new_signups: parseInt(data.new_signups),
+      today: {
+        new_users: parseInt(data.today_new_users),
+        appointments: parseInt(data.today_appointments),
+        revenue: parseFloat(data.today_revenue)
+      },
+      // This now contains a mix of users, appointments, and payments
+      recent_activities: activityResult.rows
+    };
+  } catch (error) {
+    console.error("Database Error in getDashboardSummary:", error);
+    throw error;
+  }
+}
 }

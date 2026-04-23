@@ -75,3 +75,12 @@ export const getRevenue = asyncHandler(async (req, res) => {
   });
 });
 
+export const getDashboard = asyncHandler(async (req, res) => {
+  // This calls the service which logic handles the DB queries
+  const stats = await adminService.getDashboardSummary();
+
+  return sendSuccess(res, {
+    message: "Dashboard summary fetched successfully",
+    data: stats,
+  });
+});
