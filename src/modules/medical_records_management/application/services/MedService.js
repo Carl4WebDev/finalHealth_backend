@@ -410,4 +410,373 @@ export default class MedService {
 
     return deleted;
   }
+
+  async getPatientVisitHistory(patientId, userId) {
+    if (!patientId || Number.isNaN(patientId)) {
+      throw new AppError("Invalid patient id", 400, {
+        code: "INVALID_PATIENT_ID",
+      });
+    }
+
+    const patient = await this.medRepo.getPatientInfo(patientId, userId);
+
+    if (!patient) {
+      throw new AppError("Patient not found or inaccessible", 404, {
+        code: "PATIENT_NOT_FOUND",
+      });
+    }
+
+    const visitHistory = await this.medRepo.getPatientVisitHistory(
+      patientId,
+      userId,
+    );
+
+    return visitHistory;
+  }
+
+  // medical record
+  async updateMedicalRecord(recordId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const existing = await this.medRepo.findById(recordId);
+
+    if (!existing) {
+      throw new AppError(
+        "Medical record not found",
+        404,
+        "MEDICAL_RECORD_NOT_FOUND",
+      );
+    }
+
+    const normalizedData = {
+      record_date: dto.record_date,
+      diagnosis: dto.diagnosis,
+      treatment: dto.treatment,
+      medications: dto.medications,
+      assessment: dto.assessment,
+      is_contagious: dto.is_contagious,
+      contagious_description: dto.contagious_description,
+      consultation_fee: Number(dto.consultation_fee ?? 0),
+      medicine_fee: Number(dto.medicine_fee ?? 0),
+      lab_fee: Number(dto.lab_fee ?? 0),
+      other_fee: Number(dto.other_fee ?? 0),
+      doctor_id: dto.doctor_id,
+      clinic_id: dto.clinic_id,
+      form_type: dto.form_type ?? "general",
+      pre_employment_data: dto.pre_employment_data ?? null,
+    };
+
+    return await this.medRepo.updateMedicalRecord(recordId, normalizedData);
+  }
+
+  async deleteMedicalRecord(recordId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const deleted = await this.medRepo.deleteMedicalRecord(recordId);
+
+    if (!deleted) {
+      throw new AppError(
+        "Medical record not found",
+        404,
+        "MEDICAL_RECORD_NOT_FOUND",
+      );
+    }
+
+    return deleted;
+  }
+
+  // prescriptions
+  async getAllPrescriptionsByRecord(recordId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    return await this.medRepo.getAllPrescriptionsByRecord(recordId);
+  }
+
+  async getPrescriptionById(prescriptionId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const prescription = await this.medRepo.getPrescriptionById(prescriptionId);
+
+    if (!prescription) {
+      throw new AppError(
+        "Prescription not found",
+        404,
+        "PRESCRIPTION_NOT_FOUND",
+      );
+    }
+
+    return prescription;
+  }
+
+  async createPrescription(recordId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const medicalRecord = await this.medRepo.findById(recordId);
+
+    if (!medicalRecord) {
+      throw new AppError(
+        "Medical record not found",
+        404,
+        "MEDICAL_RECORD_NOT_FOUND",
+      );
+    }
+
+    const normalizedData = {
+      medicalRecordId: recordId,
+      patientId: Number(dto.patient_id),
+      medicationName: dto.medication_name,
+      dosage: dto.dosage ?? null,
+      frequency: dto.frequency ?? null,
+      duration: dto.duration ?? null,
+      prescriptionImgPath: dto.prescription_img_path ?? null,
+    };
+
+    return await this.medRepo.createPrescription(normalizedData);
+  }
+
+  async updatePrescription(prescriptionId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const existing = await this.medRepo.getPrescriptionById(prescriptionId);
+
+    if (!existing) {
+      throw new AppError(
+        "Prescription not found",
+        404,
+        "PRESCRIPTION_NOT_FOUND",
+      );
+    }
+
+    const normalizedData = {
+      patientId: Number(dto.patient_id ?? existing.patient_id),
+      medicationName: dto.medication_name ?? existing.medication_name,
+      dosage: dto.dosage ?? existing.dosage,
+      frequency: dto.frequency ?? existing.frequency,
+      duration: dto.duration ?? existing.duration,
+      prescriptionImgPath:
+        dto.prescription_img_path ?? existing.prescription_img_path ?? null,
+    };
+
+    return await this.medRepo.updatePrescription(
+      prescriptionId,
+      normalizedData,
+    );
+  }
+
+  async deletePrescription(prescriptionId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const deleted = await this.medRepo.deletePrescription(prescriptionId);
+
+    if (!deleted) {
+      throw new AppError(
+        "Prescription not found",
+        404,
+        "PRESCRIPTION_NOT_FOUND",
+      );
+    }
+
+    return deleted;
+  }
+
+  // lab results
+  async getAllLabResultsByRecord(recordId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    return await this.medRepo.getAllLabResultsByRecord(recordId);
+  }
+
+  async getLabResultById(resultId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const labResult = await this.medRepo.getLabResultById(resultId);
+
+    if (!labResult) {
+      throw new AppError("Lab result not found", 404, "LAB_RESULT_NOT_FOUND");
+    }
+
+    return labResult;
+  }
+
+  async createLabResult(recordId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const medicalRecord = await this.medRepo.findById(recordId);
+
+    if (!medicalRecord) {
+      throw new AppError(
+        "Medical record not found",
+        404,
+        "MEDICAL_RECORD_NOT_FOUND",
+      );
+    }
+
+    const normalizedData = {
+      medicalRecordId: recordId,
+      patientId: Number(dto.patient_id),
+      testType: dto.test_type,
+      result: dto.result ?? null,
+      interpretation: dto.interpretation ?? null,
+      labImgPath: dto.lab_img_path ?? null,
+    };
+
+    return await this.medRepo.createLabResult(normalizedData);
+  }
+
+  async updateLabResult(resultId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const existing = await this.medRepo.getLabResultById(resultId);
+
+    if (!existing) {
+      throw new AppError("Lab result not found", 404, "LAB_RESULT_NOT_FOUND");
+    }
+
+    const normalizedData = {
+      patientId: Number(dto.patient_id ?? existing.patient_id),
+      testType: dto.test_type ?? existing.test_type,
+      result: dto.result ?? existing.result,
+      interpretation: dto.interpretation ?? existing.interpretation,
+      labImgPath: dto.lab_img_path ?? existing.lab_img_path ?? null,
+    };
+
+    return await this.medRepo.updateLabResult(resultId, normalizedData);
+  }
+
+  async deleteLabResult(resultId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const deleted = await this.medRepo.deleteLabResult(resultId);
+
+    if (!deleted) {
+      throw new AppError("Lab result not found", 404, "LAB_RESULT_NOT_FOUND");
+    }
+
+    return deleted;
+  }
+
+  // certificates
+  async getAllCertificatesByRecord(recordId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    return await this.medRepo.getAllCertificatesByRecord(recordId);
+  }
+
+  async getCertificateById(certificateId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const certificate = await this.medRepo.getCertificateById(certificateId);
+
+    if (!certificate) {
+      throw new AppError("Certificate not found", 404, "CERTIFICATE_NOT_FOUND");
+    }
+
+    return certificate;
+  }
+
+  async createCertificate(recordId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const medicalRecord = await this.medRepo.findById(recordId);
+
+    if (!medicalRecord) {
+      throw new AppError(
+        "Medical record not found",
+        404,
+        "MEDICAL_RECORD_NOT_FOUND",
+      );
+    }
+
+    const normalizedData = {
+      medicalRecordId: recordId,
+      patientId: Number(dto.patient_id),
+      certificateType: dto.certificate_type,
+      remarks: dto.remarks ?? null,
+      certificateImgPath: dto.certificates_img_path ?? null,
+    };
+
+    return await this.medRepo.createCertificate(normalizedData);
+  }
+
+  async updateCertificate(certificateId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const existing = await this.medRepo.getCertificateById(certificateId);
+
+    if (!existing) {
+      throw new AppError("Certificate not found", 404, "CERTIFICATE_NOT_FOUND");
+    }
+
+    const normalizedData = {
+      patientId: Number(dto.patient_id ?? existing.patient_id),
+      certificateType: dto.certificate_type ?? existing.certificate_type,
+      remarks: dto.remarks ?? existing.remarks,
+      certificateImgPath:
+        dto.certificates_img_path ?? existing.certificates_img_path ?? null,
+    };
+
+    return await this.medRepo.updateCertificate(certificateId, normalizedData);
+  }
+
+  async deleteCertificate(certificateId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const deleted = await this.medRepo.deleteCertificate(certificateId);
+
+    if (!deleted) {
+      throw new AppError("Certificate not found", 404, "CERTIFICATE_NOT_FOUND");
+    }
+
+    return deleted;
+  }
+
+  async getMedicalRecordByAppointmentId(appointmentId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    if (!appointmentId || Number.isNaN(appointmentId)) {
+      throw new AppError(
+        "Invalid appointment id",
+        400,
+        "INVALID_APPOINTMENT_ID",
+      );
+    }
+
+    return await this.medRepo.getMedicalRecordByAppointmentId(appointmentId);
+  }
 }

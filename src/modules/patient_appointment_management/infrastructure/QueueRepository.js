@@ -130,19 +130,46 @@ export default class QueueRepository extends IQueueRepository {
   }
 
   async updateStatus(queueEntryId, status) {
-    const result = await db.query(
-      `
-    UPDATE queue_entries
-    SET status=$1
-    WHERE queue_entry_id=$2
-    RETURNING *;
-    `,
-      [status, queueEntryId]
-    );
+    const client = await db.getClient();
 
-    return this._toEntity(result.rows[0]); // Return the updated entry as an entity
+    try {
+      await client.query("BEGIN");
+
+      // 1. Update queue entry (your existing logic)
+      const result = await client.query(
+        `
+      UPDATE queue_entries
+      SET status=$1
+      WHERE queue_entry_id=$2
+      RETURNING *;
+      `,
+        [status, queueEntryId],
+      );
+
+      const queueEntry = result.rows[0];
+
+      // 2. ONLY if completed → update appointment
+      if (status.toLowerCase() === "completed") {
+        await client.query(
+          `
+        UPDATE appointments
+        SET status = 'Pending'
+        WHERE appointment_id = $1;
+        `,
+          [queueEntry.appointment_id],
+        );
+      }
+
+      await client.query("COMMIT");
+
+      return this._toEntity(queueEntry);
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
   }
-
   _toEntity(row) {
     if (!row) return null;
 

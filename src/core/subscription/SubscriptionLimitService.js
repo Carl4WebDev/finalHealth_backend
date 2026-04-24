@@ -254,6 +254,64 @@ class SubscriptionLimitService {
       rules,
     };
   }
+
+  async getDoctorLimitStatus(userId) {
+    const { subscription, rules } = await this.getUserRules(userId);
+
+    const currentDoctors = await doctorRepo.countByUser(userId);
+
+    if (rules.maxDoctors === null) {
+      return {
+        canAddDoctor: true,
+        currentDoctors,
+        maxDoctors: null,
+        planType: subscription.planType,
+        planName: subscription.planName,
+        message: "Your plan allows unlimited doctors.",
+      };
+    }
+
+    const canAddDoctor = currentDoctors < rules.maxDoctors;
+
+    return {
+      canAddDoctor,
+      currentDoctors,
+      maxDoctors: rules.maxDoctors,
+      planType: subscription.planType,
+      planName: subscription.planName,
+      message: canAddDoctor
+        ? "You can still add a doctor."
+        : `Your ${subscription.planType} plan only allows ${rules.maxDoctors} doctor(s).`,
+    };
+  }
+
+  async getClinicLimitStatus(userId) {
+    const { subscription, rules } = await this.getUserRules(userId);
+
+    const currentClinics = await clinicRepo.countByUser(userId);
+
+    if (rules.maxClinics === null) {
+      return {
+        canAddClinic: true,
+        currentClinics,
+        maxClinics: null,
+        planType: subscription.planType,
+        message: "Unlimited clinics allowed.",
+      };
+    }
+
+    const canAddClinic = currentClinics < rules.maxClinics;
+
+    return {
+      canAddClinic,
+      currentClinics,
+      maxClinics: rules.maxClinics,
+      planType: subscription.planType,
+      message: canAddClinic
+        ? "You can still add a clinic."
+        : `Clinic limit reached for ${subscription.planType} subscription`,
+    };
+  }
 }
 
 export default new SubscriptionLimitService();
