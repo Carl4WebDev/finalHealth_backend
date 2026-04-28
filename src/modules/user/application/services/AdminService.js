@@ -127,4 +127,14 @@ export default class AdminService {
 
     return records;
   }
+
+  async getCustomerRevenue() {
+  // This calls the repo method we created earlier
+  return await this.adminRepo.getCustomerRevenue();
+}
+
+ async getDashboardSummary() {
+  // This calls the repo method we created earlier
+  return await this.adminRepo.getDashboardSummary();
+ }
 }

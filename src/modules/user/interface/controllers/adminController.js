@@ -64,3 +64,23 @@ export const getAllSubscribers = asyncHandler(async (req, res) => {
     data: { subscribers },
   });
 });
+
+export const getRevenue = asyncHandler(async (req, res) => {
+  // Call the service (we will create this next)
+  const revenueData = await adminService.getCustomerRevenue();
+
+  return sendSuccess(res, {
+    message: "Revenue data fetched successfully",
+    data: revenueData, 
+  });
+});
+
+export const getDashboard = asyncHandler(async (req, res) => {
+  // This calls the service which logic handles the DB queries
+  const stats = await adminService.getDashboardSummary();
+
+  return sendSuccess(res, {
+    message: "Dashboard summary fetched successfully",
+    data: stats,
+  });
+});

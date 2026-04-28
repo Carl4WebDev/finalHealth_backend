@@ -8,6 +8,8 @@ import {
   login as adminLogin,
   register as adminRegister,
   getAllSubscribers,
+  getRevenue,
+  getDashboard,
 } from "./controllers/adminController.js";
 
 const router = express.Router();
@@ -23,5 +25,6 @@ router.post("/register", validateAdminRegister, adminRegister);
 router.post("/login", loginLimiter, adminLogin);
 
 router.get("/subscribers", authMiddleware, requireAdmin, getAllSubscribers);
-
+router.get("/revenue", authMiddleware, requireAdmin, getRevenue);
+router.get("/dashboard-summary", authMiddleware, requireAdmin, getDashboard);
 export default router;
