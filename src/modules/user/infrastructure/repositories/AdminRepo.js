@@ -70,21 +70,20 @@ export default class AdminRepo extends IAdminRepository {
       u.user_id,
       u.email,
       u.status,
-
       up.f_name,
       up.m_name,
       up.l_name,
-
+      up.contact_num, 
+      up.address,
       us.subscription_id,
       us.status AS subscription_status,
       us.start_date,
       us.end_date,
-      us.auto_renew,
-
-      sp.plan_id,
-      sp.plan_name,
-      sp.plan_type,
-      sp.price
+      sp.plan_name, -- This will be shown as "Subscription Type" in the UI
+      sp.price,
+      (SELECT MAX(payment_date) 
+       FROM subscription_payment 
+       WHERE subscription_id = us.subscription_id) as last_payment_date
     FROM users u
     LEFT JOIN (
       SELECT DISTINCT ON (user_id)
@@ -93,7 +92,6 @@ export default class AdminRepo extends IAdminRepository {
         status,
         start_date,
         end_date,
-        auto_renew,
         plan_id
       FROM user_subscription
       WHERE status <> 'cancelled'
@@ -105,8 +103,13 @@ export default class AdminRepo extends IAdminRepository {
       ON up.user_id = u.user_id
   `;
 
-    const { rows } = await db.query(query);
-    return rows;
+    try {
+      const { rows } = await db.query(query);
+      return rows;
+    } catch (error) {
+      console.error("Database Error in fetchUsersWithSubscriptions:", error);
+      throw error;
+    }
   }
 
   async getCustomerRevenue() {
