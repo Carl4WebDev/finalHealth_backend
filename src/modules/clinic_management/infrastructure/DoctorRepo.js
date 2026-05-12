@@ -88,16 +88,17 @@ export default class DoctorRepo extends IDoctorRepository {
     return result.rows.map((row) => this._toEntity(row));
   }
 
-  async findByClinic(clinicId) {
+  async findByClinic(clinicId, userId) {
     const query = `
-    SELECT d.*
+    SELECT DISTINCT d.*
     FROM doctors d
     JOIN doctor_clinics dc ON dc.doctor_id = d.doctor_id
     WHERE dc.clinic_id = $1
-    ORDER BY d.l_name ASC
+      AND d.user_id = $2
+    ORDER BY d.l_name ASC, d.f_name ASC
   `;
 
-    const result = await db.query(query, [clinicId]);
+    const result = await db.query(query, [clinicId, userId]);
     return result.rows.map((row) => this._toEntity(row));
   }
   async findClinicsByDoctor(doctorId) {

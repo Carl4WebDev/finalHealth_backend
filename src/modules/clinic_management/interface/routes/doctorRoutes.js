@@ -4,7 +4,7 @@ import {
   approveDoctor,
   rejectDoctor,
   assignDoctorToClinic,
-  // getDoctors,
+  getDoctors,
   getClinicsOfDoctor,
   getAllApprovedDoctorsOfUser,
   getAllDoctorsOfUser,
@@ -24,13 +24,19 @@ router.post(
   "/assign-clinic",
   authMiddleware,
   requireUser,
-  assignDoctorToClinic
+  assignDoctorToClinic,
 );
 
 router.post("/doctor/:id/approve", authMiddleware, requireAdmin, approveDoctor);
 router.post("/doctor/:id/reject", authMiddleware, requireAdmin, rejectDoctor);
 
-// router.get("/doctors", authMiddleware, getDoctors);
+router.get(
+  "/clinic/:clinicId/doctors",
+  authMiddleware,
+  requireUser,
+  getDoctors,
+);
+
 router.get("/doctors/:doctorId/clinics", authMiddleware, getClinicsOfDoctor);
 
 // ============================================================
@@ -43,13 +49,13 @@ router.get(
   "/doctor-informations/:doctorId",
   authMiddleware,
   requireUser,
-  getAllInfoOfDoctor
+  getAllInfoOfDoctor,
 );
 
 router.put(
   "/doctor/:doctorId/information",
   authMiddleware,
   requireUser,
-  updateDoctorInfo
+  updateDoctorInfo,
 );
 export default router;

@@ -130,11 +130,8 @@ export default class DoctorManagementService {
   // ============================================================
   // QUERIES
   // ============================================================
-  async getDoctors(clinicId = null) {
-    if (clinicId) {
-      return this.doctorRepo.findByClinic(clinicId);
-    }
-    return this.doctorRepo.findAll();
+  async getDoctorsByClinic(clinicId, userId) {
+    return await this.doctorRepo.findByClinic(clinicId, userId);
   }
 
   async getClinicsOfDoctor(doctorId) {

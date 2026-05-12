@@ -126,6 +126,10 @@ app.use(
 // 404 handler – after all routes
 app.use(notFoundHandler);
 
+import { startQueueCleanupJob } from "./src/jobs/queueCleanupJob.js";
+
+startQueueCleanupJob();
+
 // GLOBAL ERROR HANDLER – last middleware
 app.use(errorHandler);
 const PORT = process.env.PORT || 5000;

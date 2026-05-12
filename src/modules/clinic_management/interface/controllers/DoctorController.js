@@ -71,17 +71,20 @@ export const assignDoctorToClinic = async (req, res) => {
   }
 };
 
-export const getDoctors = async (req, res) => {
-  try {
-    const clinicId = req.query.clinic_id ? Number(req.query.clinic_id) : null;
+export const getDoctors = asyncHandler(async (req, res) => {
+  const { clinicId } = req.params;
+  const userId = req.user.user_id || req.user.userId || req.user.id;
 
-    const doctors = await doctorService.getDoctors(clinicId);
+  const doctors = await doctorService.getDoctorsByClinic(
+    Number(clinicId),
+    Number(userId),
+  );
 
-    res.status(200).json({ success: true, doctors });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-};
+  return sendSuccess(res, {
+    message: "Doctors fetched successfully",
+    data: { doctors },
+  });
+});
 
 export const getClinicsOfDoctor = async (req, res) => {
   try {
