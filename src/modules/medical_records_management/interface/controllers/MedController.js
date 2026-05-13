@@ -386,12 +386,28 @@ export const createLabResult = asyncHandler(async (req, res) => {
   const labResult = await medService.createLabResult(
     recordId,
     req.body,
+    req.file,
     req.user,
   );
 
   return sendSuccess(res, {
     statusCode: 201,
     message: "Lab result created successfully",
+    data: { labResult },
+  });
+});
+
+export const updateLabResultImage = asyncHandler(async (req, res) => {
+  const labResultId = Number(req.params.labResultId);
+
+  const labResult = await medService.updateLabResultImage(
+    labResultId,
+    req.file,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    message: "Lab result image uploaded successfully",
     data: { labResult },
   });
 });

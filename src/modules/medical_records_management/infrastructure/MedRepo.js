@@ -807,29 +807,46 @@ ORDER BY a.appointment_date DESC, a.appointment_id DESC
       `
     INSERT INTO lab_result
     (
+      appointment_id,
       patient_id,
-      medical_record_id,
+      test_date,
       test_type,
       result,
       interpretation,
-      lab_img_path
+      lab_img_path,
+      medical_record_id
     )
-    VALUES ($1,$2,$3,$4,$5,$6)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
     RETURNING *
     `,
       [
+        data.appointmentId,
         data.patientId,
-        data.medicalRecordId,
+        data.testDate,
         data.testType,
         data.result,
         data.interpretation,
         data.labImgPath,
+        data.medicalRecordId,
       ],
     );
 
     return res.rows[0];
   }
 
+  async updateLabResultImage(labResultId, labImgPath) {
+    const res = await db.query(
+      `
+    UPDATE lab_result
+    SET lab_img_path = $1
+    WHERE result_id = $2
+    RETURNING *
+    `,
+      [labImgPath, labResultId],
+    );
+
+    return res.rows[0] || null;
+  }
   async updateLabResult(resultId, data) {
     const res = await db.query(
       `

@@ -45,6 +45,7 @@ import {
   updateCertificate,
   deleteCertificate,
   getMedicalRecordByAppointmentId,
+  updateLabResultImage,
 
   // prescription master
   getAllPrescriptionMasters,
@@ -337,11 +338,22 @@ router.get(
   getLabResultById,
 );
 
+import { uploadLabResult } from "../../../../core/middleware/uploadLabResult.js";
+
 router.post(
   "/record/:recordId/lab-results",
   authMiddleware,
   requireUser,
+  uploadLabResult.single("lab_image"),
   createLabResult,
+);
+
+router.patch(
+  "/lab-results/:labResultId/image",
+  authMiddleware,
+  requireUser,
+  uploadLabResult.single("lab_image"),
+  updateLabResultImage,
 );
 
 router.patch(

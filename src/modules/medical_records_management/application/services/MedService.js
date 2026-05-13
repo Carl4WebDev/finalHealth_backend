@@ -700,7 +700,7 @@ export default class MedService {
     return labResult;
   }
 
-  async createLabResult(recordId, dto, actor) {
+  async createLabResult(recordId, dto, file, actor) {
     if (!actor?.id) {
       throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     }
@@ -716,15 +716,39 @@ export default class MedService {
     }
 
     const normalizedData = {
-      medicalRecordId: recordId,
       patientId: Number(dto.patient_id),
+      medicalRecordId: recordId,
+      appointmentId: Number(
+        dto.appointment_id || medicalRecord.appointment_id || null,
+      ),
+      testDate: dto.test_date || null,
       testType: dto.test_type,
       result: dto.result ?? null,
       interpretation: dto.interpretation ?? null,
-      labImgPath: dto.lab_img_path ?? null,
+      labImgPath: file ? `/uploads/lab-results/${file.filename}` : null,
     };
 
     return await this.medRepo.createLabResult(normalizedData);
+  }
+
+  async updateLabResultImage(labResultId, file, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    if (!file) {
+      throw new AppError("Lab image is required", 400, "LAB_IMAGE_REQUIRED");
+    }
+
+    const existing = await this.medRepo.getLabResultById(labResultId);
+
+    if (!existing) {
+      throw new AppError("Lab result not found", 404, "LAB_RESULT_NOT_FOUND");
+    }
+
+    const labImgPath = `/uploads/lab-results/${file.filename}`;
+
+    return await this.medRepo.updateLabResultImage(labResultId, labImgPath);
   }
 
   async updateLabResult(resultId, dto, actor) {
