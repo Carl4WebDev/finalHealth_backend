@@ -112,18 +112,7 @@ export default class MedService {
       );
     }
 
-    try {
-      return await this.medRepo.createDiagnosis(actor.id, diagnosisName);
-    } catch (err) {
-      if (err.code === "23505") {
-        throw new AppError(
-          "Diagnosis already exists",
-          409,
-          "DIAGNOSIS_ALREADY_EXISTS",
-        );
-      }
-      throw err;
-    }
+    return await this.medRepo.createDiagnosis(actor.id, diagnosisName);
   }
 
   async updateDiagnosis(diagnosisId, dto, actor) {
@@ -202,18 +191,7 @@ export default class MedService {
       );
     }
 
-    try {
-      return await this.medRepo.createTreatment(actor.id, treatmentName);
-    } catch (err) {
-      if (err.code === "23505") {
-        throw new AppError(
-          "Treatment already exists",
-          409,
-          "TREATMENT_ALREADY_EXISTS",
-        );
-      }
-      throw err;
-    }
+    return await this.medRepo.createTreatment(actor.id, treatmentName);
   }
 
   async updateTreatment(treatmentId, dto, actor) {
@@ -528,32 +506,23 @@ export default class MedService {
     return prescription;
   }
 
-  async createPrescription(recordId, dto, actor) {
-    if (!actor?.id) {
-      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
-    }
+  async createPrescriptionMaster(dto, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
 
-    const medicalRecord = await this.medRepo.findById(recordId);
+    const prescriptionName = dto?.prescription_name?.trim();
 
-    if (!medicalRecord) {
+    if (!prescriptionName) {
       throw new AppError(
-        "Medical record not found",
-        404,
-        "MEDICAL_RECORD_NOT_FOUND",
+        "Prescription name is required",
+        400,
+        "PRESCRIPTION_NAME_REQUIRED",
       );
     }
 
-    const normalizedData = {
-      medicalRecordId: recordId,
-      patientId: Number(dto.patient_id),
-      medicationName: dto.medication_name,
-      dosage: dto.dosage ?? null,
-      frequency: dto.frequency ?? null,
-      duration: dto.duration ?? null,
-      prescriptionImgPath: dto.prescription_img_path ?? null,
-    };
-
-    return await this.medRepo.createPrescription(normalizedData);
+    return await this.medRepo.createPrescriptionMaster(
+      actor.id,
+      prescriptionName,
+    );
   }
 
   async updatePrescription(prescriptionId, dto, actor) {
@@ -949,21 +918,8 @@ export default class MedService {
       );
     }
 
-    try {
-      return await this.medRepo.createLabResultMaster(actor.id, labResultName);
-    } catch (err) {
-      if (err.code === "23505") {
-        throw new AppError(
-          "Lab result already exists",
-          409,
-          "LAB_RESULT_ALREADY_EXISTS",
-        );
-      }
-
-      throw err;
-    }
+    return await this.medRepo.createLabResultMaster(actor.id, labResultName);
   }
-
   async updateLabResultMaster(labResultId, dto, actor) {
     if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
 
@@ -1064,22 +1020,10 @@ export default class MedService {
       );
     }
 
-    try {
-      return await this.medRepo.createCertificateMaster(
-        actor.id,
-        certificateName,
-      );
-    } catch (err) {
-      if (err.code === "23505") {
-        throw new AppError(
-          "Certificate already exists",
-          409,
-          "CERTIFICATE_ALREADY_EXISTS",
-        );
-      }
-
-      throw err;
-    }
+    return await this.medRepo.createCertificateMaster(
+      actor.id,
+      certificateName,
+    );
   }
 
   async updateCertificateMaster(certificateId, dto, actor) {
@@ -1163,7 +1107,9 @@ export default class MedService {
   }
 
   async createFee(dto, actor) {
-    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
 
     const feeName = dto?.fee_name?.trim();
     const amount = Number(dto?.amount);
@@ -1180,19 +1126,11 @@ export default class MedService {
       );
     }
 
-    try {
-      return await this.medRepo.createFee({
-        userId: actor.id,
-        feeName,
-        amount,
-      });
-    } catch (err) {
-      if (err.code === "23505") {
-        throw new AppError("Fee already exists", 409, "FEE_ALREADY_EXISTS");
-      }
-
-      throw err;
-    }
+    return await this.medRepo.createFee({
+      userId: actor.id,
+      feeName,
+      amount,
+    });
   }
 
   async updateFee(feeId, dto, actor) {

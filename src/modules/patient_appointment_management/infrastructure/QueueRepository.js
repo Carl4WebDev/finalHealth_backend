@@ -25,18 +25,21 @@ export default class QueueRepository extends IQueueRepository {
   }
   // Method to check if the patient is already in the queue for the same doctor and clinic
   async findQueueByPatientAndDoctorAndClinic(patientId, doctorId, clinicId) {
-    const query = `
-      SELECT * FROM queue_entries
-      WHERE patient_id = $1
-        AND doctor_id = $2
-        AND clinic_id = $3;
-    `;
-    const values = [patientId, doctorId, clinicId];
+    const res = await db.query(
+      `
+    SELECT *
+    FROM queue_entries
+    WHERE patient_id = $1
+      AND doctor_id = $2
+      AND clinic_id = $3
+      AND DATE(arrival_time) = CURRENT_DATE
+      AND status IN ('waiting', 'in_progress')
+    `,
+      [patientId, doctorId, clinicId],
+    );
 
-    const result = await db.query(query, values);
-    return result.rows; // Returning the rows (if any) from the query
+    return res.rows;
   }
-
   async getQueueOfDoctorInClinic(doctorId, clinicId) {
     const query = `
     SELECT 
