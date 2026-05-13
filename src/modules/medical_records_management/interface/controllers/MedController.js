@@ -533,3 +533,242 @@ export const getClinicLimitStatus = asyncHandler(async (req, res) => {
     data,
   });
 });
+
+// prescription master
+export const getAllPrescriptionMasters = asyncHandler(async (req, res) => {
+  const prescriptions = await medService.getAllPrescriptionMasters(req.user);
+
+  return sendSuccess(res, {
+    message: "Prescription masters fetched successfully",
+    data: { prescriptions },
+  });
+});
+
+export const getPrescriptionMasterById = asyncHandler(async (req, res) => {
+  const prescriptionId = Number(req.params.prescriptionId);
+
+  const prescription = await medService.getPrescriptionMasterById(
+    prescriptionId,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    message: "Prescription master fetched successfully",
+    data: { prescription },
+  });
+});
+
+export const createPrescriptionMaster = asyncHandler(async (req, res) => {
+  const prescription = await medService.createPrescriptionMaster(
+    req.body,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Prescription master created successfully",
+    data: { prescription },
+  });
+});
+
+export const updatePrescriptionMaster = asyncHandler(async (req, res) => {
+  const prescriptionId = Number(req.params.prescriptionId);
+
+  const prescription = await medService.updatePrescriptionMaster(
+    prescriptionId,
+    req.body,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    message: "Prescription master updated successfully",
+    data: { prescription },
+  });
+});
+
+export const deletePrescriptionMaster = asyncHandler(async (req, res) => {
+  const prescriptionId = Number(req.params.prescriptionId);
+
+  await medService.deletePrescriptionMaster(prescriptionId, req.user);
+
+  return sendSuccess(res, {
+    message: "Prescription master deleted successfully",
+    data: null,
+  });
+});
+
+// lab result master
+export const getAllLabResultMasters = asyncHandler(async (req, res) => {
+  const labResults = await medService.getAllLabResultMasters(req.user);
+
+  return sendSuccess(res, {
+    message: "Lab result masters fetched successfully",
+    data: { labResults },
+  });
+});
+
+export const getLabResultMasterById = asyncHandler(async (req, res) => {
+  const labResultId = Number(req.params.labResultId);
+
+  const labResult = await medService.getLabResultMasterById(
+    labResultId,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    message: "Lab result master fetched successfully",
+    data: { labResult },
+  });
+});
+
+export const createLabResultMaster = asyncHandler(async (req, res) => {
+  const labResult = await medService.createLabResultMaster(req.body, req.user);
+
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Lab result master created successfully",
+    data: { labResult },
+  });
+});
+
+export const updateLabResultMaster = asyncHandler(async (req, res) => {
+  const labResultId = Number(req.params.labResultId);
+
+  const labResult = await medService.updateLabResultMaster(
+    labResultId,
+    req.body,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    message: "Lab result master updated successfully",
+    data: { labResult },
+  });
+});
+
+export const deleteLabResultMaster = asyncHandler(async (req, res) => {
+  const labResultId = Number(req.params.labResultId);
+
+  await medService.deleteLabResultMaster(labResultId, req.user);
+
+  return sendSuccess(res, {
+    message: "Lab result master deleted successfully",
+    data: null,
+  });
+});
+
+// certificate master
+export const getAllCertificateMasters = asyncHandler(async (req, res) => {
+  const certificates = await medService.getAllCertificateMasters(req.user);
+
+  return sendSuccess(res, {
+    message: "Certificate masters fetched successfully",
+    data: { certificates },
+  });
+});
+
+export const getCertificateMasterById = asyncHandler(async (req, res) => {
+  const certificateId = Number(req.params.certificateId);
+
+  const certificate = await medService.getCertificateMasterById(
+    certificateId,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    message: "Certificate master fetched successfully",
+    data: { certificate },
+  });
+});
+
+export const createCertificateMaster = asyncHandler(async (req, res) => {
+  const certificate = await medService.createCertificateMaster(
+    req.body,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Certificate master created successfully",
+    data: { certificate },
+  });
+});
+
+export const updateCertificateMaster = asyncHandler(async (req, res) => {
+  const certificateId = Number(req.params.certificateId);
+
+  const certificate = await medService.updateCertificateMaster(
+    certificateId,
+    req.body,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    message: "Certificate master updated successfully",
+    data: { certificate },
+  });
+});
+
+export const deleteCertificateMaster = asyncHandler(async (req, res) => {
+  const certificateId = Number(req.params.certificateId);
+
+  await medService.deleteCertificateMaster(certificateId, req.user);
+
+  return sendSuccess(res, {
+    message: "Certificate master deleted successfully",
+    data: null,
+  });
+});
+
+// fees master
+export const getAllFees = asyncHandler(async (req, res) => {
+  const fees = await medService.getAllFees(req.user);
+
+  return sendSuccess(res, {
+    message: "Fees fetched successfully",
+    data: { fees },
+  });
+});
+
+export const getFeeById = asyncHandler(async (req, res) => {
+  const feeId = Number(req.params.feeId);
+
+  const fee = await medService.getFeeById(feeId, req.user);
+
+  return sendSuccess(res, {
+    message: "Fee fetched successfully",
+    data: { fee },
+  });
+});
+
+export const createFee = asyncHandler(async (req, res) => {
+  const fee = await medService.createFee(req.body, req.user);
+
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Fee created successfully",
+    data: { fee },
+  });
+});
+
+export const updateFee = asyncHandler(async (req, res) => {
+  const feeId = Number(req.params.feeId);
+
+  const fee = await medService.updateFee(feeId, req.body, req.user);
+
+  return sendSuccess(res, {
+    message: "Fee updated successfully",
+    data: { fee },
+  });
+});
+
+export const deleteFee = asyncHandler(async (req, res) => {
+  const feeId = Number(req.params.feeId);
+
+  await medService.deleteFee(feeId, req.user);
+
+  return sendSuccess(res, {
+    message: "Fee deleted successfully",
+    data: null,
+  });
+});

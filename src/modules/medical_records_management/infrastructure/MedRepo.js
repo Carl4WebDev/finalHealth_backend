@@ -987,4 +987,362 @@ ORDER BY a.appointment_date DESC, a.appointment_id DESC
 
     return res.rows[0] || null;
   }
+
+  // prescription master
+  async getAllPrescriptionMasters(userId) {
+    const res = await db.query(
+      `
+    SELECT
+      prescription_id,
+      prescription_name,
+      created_at
+    FROM prescription_master
+    WHERE user_id = $1
+    ORDER BY prescription_name ASC
+    `,
+      [userId],
+    );
+
+    return res.rows;
+  }
+
+  async getPrescriptionMasterById(prescriptionId, userId) {
+    const res = await db.query(
+      `
+    SELECT
+      prescription_id,
+      prescription_name,
+      created_at
+    FROM prescription_master
+    WHERE prescription_id = $1
+      AND user_id = $2
+    LIMIT 1
+    `,
+      [prescriptionId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async createPrescriptionMaster(userId, prescriptionName) {
+    const res = await db.query(
+      `
+    INSERT INTO prescription_master
+    (
+      user_id,
+      prescription_name
+    )
+    VALUES ($1, $2)
+    RETURNING
+      prescription_id,
+      prescription_name,
+      created_at
+    `,
+      [userId, prescriptionName],
+    );
+
+    return res.rows[0];
+  }
+
+  async updatePrescriptionMaster(userId, prescriptionId, prescriptionName) {
+    const res = await db.query(
+      `
+    UPDATE prescription_master
+    SET prescription_name = $1
+    WHERE prescription_id = $2
+      AND user_id = $3
+    RETURNING
+      prescription_id,
+      prescription_name,
+      created_at
+    `,
+      [prescriptionName, prescriptionId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async deletePrescriptionMaster(userId, prescriptionId) {
+    const res = await db.query(
+      `
+    DELETE FROM prescription_master
+    WHERE prescription_id = $1
+      AND user_id = $2
+    RETURNING prescription_id
+    `,
+      [prescriptionId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  // lab result master
+  async getAllLabResultMasters(userId) {
+    const res = await db.query(
+      `
+    SELECT
+      lab_result_id,
+      lab_result_name,
+      created_at
+    FROM lab_result_master
+    WHERE user_id = $1
+    ORDER BY lab_result_name ASC
+    `,
+      [userId],
+    );
+
+    return res.rows;
+  }
+
+  async getLabResultMasterById(labResultId, userId) {
+    const res = await db.query(
+      `
+    SELECT
+      lab_result_id,
+      lab_result_name,
+      created_at
+    FROM lab_result_master
+    WHERE lab_result_id = $1
+      AND user_id = $2
+    LIMIT 1
+    `,
+      [labResultId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async createLabResultMaster(userId, labResultName) {
+    const res = await db.query(
+      `
+    INSERT INTO lab_result_master
+    (
+      user_id,
+      lab_result_name
+    )
+    VALUES ($1, $2)
+    RETURNING
+      lab_result_id,
+      lab_result_name,
+      created_at
+    `,
+      [userId, labResultName],
+    );
+
+    return res.rows[0];
+  }
+
+  async updateLabResultMaster(userId, labResultId, labResultName) {
+    const res = await db.query(
+      `
+    UPDATE lab_result_master
+    SET lab_result_name = $1
+    WHERE lab_result_id = $2
+      AND user_id = $3
+    RETURNING
+      lab_result_id,
+      lab_result_name,
+      created_at
+    `,
+      [labResultName, labResultId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async deleteLabResultMaster(userId, labResultId) {
+    const res = await db.query(
+      `
+    DELETE FROM lab_result_master
+    WHERE lab_result_id = $1
+      AND user_id = $2
+    RETURNING lab_result_id
+    `,
+      [labResultId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  // certificate master
+  async getAllCertificateMasters(userId) {
+    const res = await db.query(
+      `
+    SELECT
+      certificate_id,
+      certificate_name,
+      created_at
+    FROM certificate_master
+    WHERE user_id = $1
+    ORDER BY certificate_name ASC
+    `,
+      [userId],
+    );
+
+    return res.rows;
+  }
+
+  async getCertificateMasterById(certificateId, userId) {
+    const res = await db.query(
+      `
+    SELECT
+      certificate_id,
+      certificate_name,
+      created_at
+    FROM certificate_master
+    WHERE certificate_id = $1
+      AND user_id = $2
+    LIMIT 1
+    `,
+      [certificateId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async createCertificateMaster(userId, certificateName) {
+    const res = await db.query(
+      `
+    INSERT INTO certificate_master
+    (
+      user_id,
+      certificate_name
+    )
+    VALUES ($1, $2)
+    RETURNING
+      certificate_id,
+      certificate_name,
+      created_at
+    `,
+      [userId, certificateName],
+    );
+
+    return res.rows[0];
+  }
+
+  async updateCertificateMaster(userId, certificateId, certificateName) {
+    const res = await db.query(
+      `
+    UPDATE certificate_master
+    SET certificate_name = $1
+    WHERE certificate_id = $2
+      AND user_id = $3
+    RETURNING
+      certificate_id,
+      certificate_name,
+      created_at
+    `,
+      [certificateName, certificateId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async deleteCertificateMaster(userId, certificateId) {
+    const res = await db.query(
+      `
+    DELETE FROM certificate_master
+    WHERE certificate_id = $1
+      AND user_id = $2
+    RETURNING certificate_id
+    `,
+      [certificateId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+  // fees master
+  async getAllFees(userId) {
+    const res = await db.query(
+      `
+    SELECT
+      fee_id,
+      fee_name,
+      amount,
+      created_at
+    FROM fee_master
+    WHERE user_id = $1
+    ORDER BY fee_name ASC
+    `,
+      [userId],
+    );
+
+    return res.rows;
+  }
+
+  async getFeeById(feeId, userId) {
+    const res = await db.query(
+      `
+    SELECT
+      fee_id,
+      fee_name,
+      amount,
+      created_at
+    FROM fee_master
+    WHERE fee_id = $1
+      AND user_id = $2
+    LIMIT 1
+    `,
+      [feeId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async createFee(data) {
+    const res = await db.query(
+      `
+    INSERT INTO fee_master
+    (
+      user_id,
+      fee_name,
+      amount
+    )
+    VALUES ($1, $2, $3)
+    RETURNING
+      fee_id,
+      fee_name,
+      amount,
+      created_at
+    `,
+      [data.userId, data.feeName, data.amount],
+    );
+
+    return res.rows[0];
+  }
+
+  async updateFee(feeId, userId, data) {
+    const res = await db.query(
+      `
+    UPDATE fee_master
+    SET
+      fee_name = $1,
+      amount = $2
+    WHERE fee_id = $3
+      AND user_id = $4
+    RETURNING
+      fee_id,
+      fee_name,
+      amount,
+      created_at
+    `,
+      [data.feeName, data.amount, feeId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async deleteFee(feeId, userId) {
+    const res = await db.query(
+      `
+    DELETE FROM fee_master
+    WHERE fee_id = $1
+      AND user_id = $2
+    RETURNING fee_id
+    `,
+      [feeId, userId],
+    );
+
+    return res.rows[0] || null;
+  }
 }

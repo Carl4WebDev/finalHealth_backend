@@ -779,4 +779,454 @@ export default class MedService {
 
     return await this.medRepo.getMedicalRecordByAppointmentId(appointmentId);
   }
+
+  // prescription master
+  async getAllPrescriptionMasters(actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    return await this.medRepo.getAllPrescriptionMasters(actor.id);
+  }
+
+  async getPrescriptionMasterById(prescriptionId, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const prescription = await this.medRepo.getPrescriptionMasterById(
+      prescriptionId,
+      actor.id,
+    );
+
+    if (!prescription) {
+      throw new AppError(
+        "Prescription master not found",
+        404,
+        "PRESCRIPTION_MASTER_NOT_FOUND",
+      );
+    }
+
+    return prescription;
+  }
+
+  async createPrescriptionMaster(dto, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const prescriptionName = dto?.prescription_name?.trim();
+
+    if (!prescriptionName) {
+      throw new AppError(
+        "Prescription name is required",
+        400,
+        "PRESCRIPTION_NAME_REQUIRED",
+      );
+    }
+
+    try {
+      return await this.medRepo.createPrescriptionMaster(
+        actor.id,
+        prescriptionName,
+      );
+    } catch (err) {
+      if (err.code === "23505") {
+        throw new AppError(
+          "Prescription already exists",
+          409,
+          "PRESCRIPTION_ALREADY_EXISTS",
+        );
+      }
+
+      throw err;
+    }
+  }
+
+  async updatePrescriptionMaster(prescriptionId, dto, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const prescriptionName = dto?.prescription_name?.trim();
+
+    if (!prescriptionName) {
+      throw new AppError(
+        "Prescription name is required",
+        400,
+        "PRESCRIPTION_NAME_REQUIRED",
+      );
+    }
+
+    try {
+      const updated = await this.medRepo.updatePrescriptionMaster(
+        actor.id,
+        prescriptionId,
+        prescriptionName,
+      );
+
+      if (!updated) {
+        throw new AppError(
+          "Prescription master not found",
+          404,
+          "PRESCRIPTION_MASTER_NOT_FOUND",
+        );
+      }
+
+      return updated;
+    } catch (err) {
+      if (err.code === "23505") {
+        throw new AppError(
+          "Prescription already exists",
+          409,
+          "PRESCRIPTION_ALREADY_EXISTS",
+        );
+      }
+
+      throw err;
+    }
+  }
+
+  async deletePrescriptionMaster(prescriptionId, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const deleted = await this.medRepo.deletePrescriptionMaster(
+      actor.id,
+      prescriptionId,
+    );
+
+    if (!deleted) {
+      throw new AppError(
+        "Prescription master not found",
+        404,
+        "PRESCRIPTION_MASTER_NOT_FOUND",
+      );
+    }
+
+    return deleted;
+  }
+
+  // lab result master
+  async getAllLabResultMasters(actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    return await this.medRepo.getAllLabResultMasters(actor.id);
+  }
+
+  async getLabResultMasterById(labResultId, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const labResult = await this.medRepo.getLabResultMasterById(
+      labResultId,
+      actor.id,
+    );
+
+    if (!labResult) {
+      throw new AppError(
+        "Lab result master not found",
+        404,
+        "LAB_RESULT_MASTER_NOT_FOUND",
+      );
+    }
+
+    return labResult;
+  }
+
+  async createLabResultMaster(dto, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const labResultName = dto?.lab_result_name?.trim();
+
+    if (!labResultName) {
+      throw new AppError(
+        "Lab result name is required",
+        400,
+        "LAB_RESULT_NAME_REQUIRED",
+      );
+    }
+
+    try {
+      return await this.medRepo.createLabResultMaster(actor.id, labResultName);
+    } catch (err) {
+      if (err.code === "23505") {
+        throw new AppError(
+          "Lab result already exists",
+          409,
+          "LAB_RESULT_ALREADY_EXISTS",
+        );
+      }
+
+      throw err;
+    }
+  }
+
+  async updateLabResultMaster(labResultId, dto, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const labResultName = dto?.lab_result_name?.trim();
+
+    if (!labResultName) {
+      throw new AppError(
+        "Lab result name is required",
+        400,
+        "LAB_RESULT_NAME_REQUIRED",
+      );
+    }
+
+    try {
+      const updated = await this.medRepo.updateLabResultMaster(
+        actor.id,
+        labResultId,
+        labResultName,
+      );
+
+      if (!updated) {
+        throw new AppError(
+          "Lab result master not found",
+          404,
+          "LAB_RESULT_MASTER_NOT_FOUND",
+        );
+      }
+
+      return updated;
+    } catch (err) {
+      if (err.code === "23505") {
+        throw new AppError(
+          "Lab result already exists",
+          409,
+          "LAB_RESULT_ALREADY_EXISTS",
+        );
+      }
+
+      throw err;
+    }
+  }
+
+  async deleteLabResultMaster(labResultId, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const deleted = await this.medRepo.deleteLabResultMaster(
+      actor.id,
+      labResultId,
+    );
+
+    if (!deleted) {
+      throw new AppError(
+        "Lab result master not found",
+        404,
+        "LAB_RESULT_MASTER_NOT_FOUND",
+      );
+    }
+
+    return deleted;
+  }
+
+  // certificate master
+  async getAllCertificateMasters(actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    return await this.medRepo.getAllCertificateMasters(actor.id);
+  }
+
+  async getCertificateMasterById(certificateId, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const certificate = await this.medRepo.getCertificateMasterById(
+      certificateId,
+      actor.id,
+    );
+
+    if (!certificate) {
+      throw new AppError(
+        "Certificate master not found",
+        404,
+        "CERTIFICATE_MASTER_NOT_FOUND",
+      );
+    }
+
+    return certificate;
+  }
+
+  async createCertificateMaster(dto, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const certificateName = dto?.certificate_name?.trim();
+
+    if (!certificateName) {
+      throw new AppError(
+        "Certificate name is required",
+        400,
+        "CERTIFICATE_NAME_REQUIRED",
+      );
+    }
+
+    try {
+      return await this.medRepo.createCertificateMaster(
+        actor.id,
+        certificateName,
+      );
+    } catch (err) {
+      if (err.code === "23505") {
+        throw new AppError(
+          "Certificate already exists",
+          409,
+          "CERTIFICATE_ALREADY_EXISTS",
+        );
+      }
+
+      throw err;
+    }
+  }
+
+  async updateCertificateMaster(certificateId, dto, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const certificateName = dto?.certificate_name?.trim();
+
+    if (!certificateName) {
+      throw new AppError(
+        "Certificate name is required",
+        400,
+        "CERTIFICATE_NAME_REQUIRED",
+      );
+    }
+
+    try {
+      const updated = await this.medRepo.updateCertificateMaster(
+        actor.id,
+        certificateId,
+        certificateName,
+      );
+
+      if (!updated) {
+        throw new AppError(
+          "Certificate master not found",
+          404,
+          "CERTIFICATE_MASTER_NOT_FOUND",
+        );
+      }
+
+      return updated;
+    } catch (err) {
+      if (err.code === "23505") {
+        throw new AppError(
+          "Certificate already exists",
+          409,
+          "CERTIFICATE_ALREADY_EXISTS",
+        );
+      }
+
+      throw err;
+    }
+  }
+
+  async deleteCertificateMaster(certificateId, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const deleted = await this.medRepo.deleteCertificateMaster(
+      actor.id,
+      certificateId,
+    );
+
+    if (!deleted) {
+      throw new AppError(
+        "Certificate master not found",
+        404,
+        "CERTIFICATE_MASTER_NOT_FOUND",
+      );
+    }
+
+    return deleted;
+  }
+
+  // fees master
+  async getAllFees(actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    return await this.medRepo.getAllFees(actor.id);
+  }
+
+  async getFeeById(feeId, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const fee = await this.medRepo.getFeeById(feeId, actor.id);
+
+    if (!fee) {
+      throw new AppError("Fee not found", 404, "FEE_NOT_FOUND");
+    }
+
+    return fee;
+  }
+
+  async createFee(dto, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const feeName = dto?.fee_name?.trim();
+    const amount = Number(dto?.amount);
+
+    if (!feeName) {
+      throw new AppError("Fee name is required", 400, "FEE_NAME_REQUIRED");
+    }
+
+    if (Number.isNaN(amount) || amount < 0) {
+      throw new AppError(
+        "Valid fee amount is required",
+        400,
+        "INVALID_FEE_AMOUNT",
+      );
+    }
+
+    try {
+      return await this.medRepo.createFee({
+        userId: actor.id,
+        feeName,
+        amount,
+      });
+    } catch (err) {
+      if (err.code === "23505") {
+        throw new AppError("Fee already exists", 409, "FEE_ALREADY_EXISTS");
+      }
+
+      throw err;
+    }
+  }
+
+  async updateFee(feeId, dto, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const existing = await this.medRepo.getFeeById(feeId, actor.id);
+
+    if (!existing) {
+      throw new AppError("Fee not found", 404, "FEE_NOT_FOUND");
+    }
+
+    const feeName = dto?.fee_name?.trim() || existing.fee_name;
+    const amount =
+      dto?.amount !== undefined ? Number(dto.amount) : Number(existing.amount);
+
+    if (Number.isNaN(amount) || amount < 0) {
+      throw new AppError(
+        "Valid fee amount is required",
+        400,
+        "INVALID_FEE_AMOUNT",
+      );
+    }
+
+    try {
+      return await this.medRepo.updateFee(feeId, actor.id, {
+        feeName,
+        amount,
+      });
+    } catch (err) {
+      if (err.code === "23505") {
+        throw new AppError("Fee already exists", 409, "FEE_ALREADY_EXISTS");
+      }
+
+      throw err;
+    }
+  }
+
+  async deleteFee(feeId, actor) {
+    if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const deleted = await this.medRepo.deleteFee(feeId, actor.id);
+
+    if (!deleted) {
+      throw new AppError("Fee not found", 404, "FEE_NOT_FOUND");
+    }
+
+    return deleted;
+  }
 }

@@ -46,6 +46,34 @@ import {
   deleteCertificate,
   getMedicalRecordByAppointmentId,
 
+  // prescription master
+  getAllPrescriptionMasters,
+  getPrescriptionMasterById,
+  createPrescriptionMaster,
+  updatePrescriptionMaster,
+  deletePrescriptionMaster,
+
+  // lab result master
+  getAllLabResultMasters,
+  getLabResultMasterById,
+  createLabResultMaster,
+  updateLabResultMaster,
+  deleteLabResultMaster,
+
+  // certificate master
+  getAllCertificateMasters,
+  getCertificateMasterById,
+  createCertificateMaster,
+  updateCertificateMaster,
+  deleteCertificateMaster,
+
+  // fees master
+  getAllFees,
+  getFeeById,
+  createFee,
+  updateFee,
+  deleteFee,
+
   //subscription
   getDoctorLimitStatus,
   getClinicLimitStatus,
@@ -106,6 +134,114 @@ router.get("/treatments", authMiddleware, requireUser, getAllTreatments);
 router.post("/treatments", authMiddleware, requireUser, createTreatment);
 router.patch("/treatments/:id", authMiddleware, requireUser, updateTreatment);
 router.delete("/treatments/:id", authMiddleware, requireUser, deleteTreatment);
+
+// prescription master
+router.get(
+  "/prescription-masters",
+  authMiddleware,
+  requireUser,
+  getAllPrescriptionMasters,
+);
+
+router.get(
+  "/prescription-masters/:prescriptionId",
+  authMiddleware,
+  requireUser,
+  getPrescriptionMasterById,
+);
+
+router.post(
+  "/prescription-masters",
+  authMiddleware,
+  requireUser,
+  createPrescriptionMaster,
+);
+
+router.patch(
+  "/prescription-masters/:prescriptionId",
+  authMiddleware,
+  requireUser,
+  updatePrescriptionMaster,
+);
+
+router.delete(
+  "/prescription-masters/:prescriptionId",
+  authMiddleware,
+  requireUser,
+  deletePrescriptionMaster,
+);
+
+// lab result master
+router.get(
+  "/lab-result-masters",
+  authMiddleware,
+  requireUser,
+  getAllLabResultMasters,
+);
+
+router.get(
+  "/lab-result-masters/:labResultId",
+  authMiddleware,
+  requireUser,
+  getLabResultMasterById,
+);
+
+router.post(
+  "/lab-result-masters",
+  authMiddleware,
+  requireUser,
+  createLabResultMaster,
+);
+
+router.patch(
+  "/lab-result-masters/:labResultId",
+  authMiddleware,
+  requireUser,
+  updateLabResultMaster,
+);
+
+router.delete(
+  "/lab-result-masters/:labResultId",
+  authMiddleware,
+  requireUser,
+  deleteLabResultMaster,
+);
+
+// certificate master
+router.get(
+  "/certificate-masters",
+  authMiddleware,
+  requireUser,
+  getAllCertificateMasters,
+);
+
+router.get(
+  "/certificate-masters/:certificateId",
+  authMiddleware,
+  requireUser,
+  getCertificateMasterById,
+);
+
+router.post(
+  "/certificate-masters",
+  authMiddleware,
+  requireUser,
+  createCertificateMaster,
+);
+
+router.patch(
+  "/certificate-masters/:certificateId",
+  authMiddleware,
+  requireUser,
+  updateCertificateMaster,
+);
+
+router.delete(
+  "/certificate-masters/:certificateId",
+  authMiddleware,
+  requireUser,
+  deleteCertificateMaster,
+);
 
 // vital signs management
 router.get(
@@ -257,6 +393,17 @@ router.delete(
   requireUser,
   deleteCertificate,
 );
+
+// fees master
+router.get("/fees", authMiddleware, requireUser, getAllFees);
+
+router.get("/fees/:feeId", authMiddleware, requireUser, getFeeById);
+
+router.post("/fees", authMiddleware, requireUser, createFee);
+
+router.patch("/fees/:feeId", authMiddleware, requireUser, updateFee);
+
+router.delete("/fees/:feeId", authMiddleware, requireUser, deleteFee);
 
 router.get(
   "/appointment/:appointmentId/medical-record",
