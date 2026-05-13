@@ -506,6 +506,109 @@ export default class MedService {
     return prescription;
   }
 
+  // prescriptions
+  async getAllPrescriptionsByRecord(recordId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    return await this.medRepo.getAllPrescriptionsByRecord(recordId);
+  }
+
+  async getPrescriptionById(prescriptionId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const prescription = await this.medRepo.getPrescriptionById(prescriptionId);
+
+    if (!prescription) {
+      throw new AppError(
+        "Prescription not found",
+        404,
+        "PRESCRIPTION_NOT_FOUND",
+      );
+    }
+
+    return prescription;
+  }
+
+  async createPrescription(recordId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const medicalRecord = await this.medRepo.findById(recordId);
+
+    if (!medicalRecord) {
+      throw new AppError(
+        "Medical record not found",
+        404,
+        "MEDICAL_RECORD_NOT_FOUND",
+      );
+    }
+
+    const normalizedData = {
+      patientId: Number(dto.patient_id),
+      medicalRecordId: recordId,
+      medicationName: dto.medication_name,
+      dosage: dto.dosage ?? null,
+      frequency: dto.frequency ?? null,
+      duration: dto.duration ?? null,
+      prescriptionImgPath: dto.prescription_img_path ?? null,
+    };
+
+    return await this.medRepo.createPrescription(normalizedData);
+  }
+
+  async updatePrescription(prescriptionId, dto, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const existing = await this.medRepo.getPrescriptionById(prescriptionId);
+
+    if (!existing) {
+      throw new AppError(
+        "Prescription not found",
+        404,
+        "PRESCRIPTION_NOT_FOUND",
+      );
+    }
+
+    const normalizedData = {
+      patientId: Number(dto.patient_id ?? existing.patient_id),
+      medicationName: dto.medication_name ?? existing.medication_name,
+      dosage: dto.dosage ?? existing.dosage,
+      frequency: dto.frequency ?? existing.frequency,
+      duration: dto.duration ?? existing.duration,
+      prescriptionImgPath:
+        dto.prescription_img_path ?? existing.prescription_img_path ?? null,
+    };
+
+    return await this.medRepo.updatePrescription(
+      prescriptionId,
+      normalizedData,
+    );
+  }
+
+  async deletePrescription(prescriptionId, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const deleted = await this.medRepo.deletePrescription(prescriptionId);
+
+    if (!deleted) {
+      throw new AppError(
+        "Prescription not found",
+        404,
+        "PRESCRIPTION_NOT_FOUND",
+      );
+    }
+
+    return deleted;
+  }
   async createPrescriptionMaster(dto, actor) {
     if (!actor?.id) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
 
