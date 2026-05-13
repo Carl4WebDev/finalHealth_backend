@@ -751,6 +751,33 @@ export default class MedService {
     return await this.medRepo.updateLabResultImage(labResultId, labImgPath);
   }
 
+  async updateCertificateImage(certificateId, file, actor) {
+    if (!actor?.id) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    if (!file) {
+      throw new AppError(
+        "Certificate image is required",
+        400,
+        "CERTIFICATE_IMAGE_REQUIRED",
+      );
+    }
+
+    const existing = await this.medRepo.getCertificateById(certificateId);
+
+    if (!existing) {
+      throw new AppError("Certificate not found", 404, "CERTIFICATE_NOT_FOUND");
+    }
+
+    const certificateImgPath = `/uploads/certificates/${file.filename}`;
+
+    return await this.medRepo.updateCertificateImage(
+      certificateId,
+      certificateImgPath,
+    );
+  }
+
   async updateLabResult(resultId, dto, actor) {
     if (!actor?.id) {
       throw new AppError("Unauthorized", 401, "UNAUTHORIZED");

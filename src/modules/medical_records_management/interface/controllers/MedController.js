@@ -412,6 +412,21 @@ export const updateLabResultImage = asyncHandler(async (req, res) => {
   });
 });
 
+export const updateCertificateImage = asyncHandler(async (req, res) => {
+  const certificateId = Number(req.params.certificateId);
+
+  const certificate = await medService.updateCertificateImage(
+    certificateId,
+    req.file,
+    req.user,
+  );
+
+  return sendSuccess(res, {
+    message: "Certificate image uploaded successfully",
+    data: { certificate },
+  });
+});
+
 export const updateLabResult = asyncHandler(async (req, res) => {
   const resultId = Number(req.params.resultId);
 

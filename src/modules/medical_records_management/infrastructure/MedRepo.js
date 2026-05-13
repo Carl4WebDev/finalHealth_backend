@@ -847,6 +847,20 @@ ORDER BY a.appointment_date DESC, a.appointment_id DESC
 
     return res.rows[0] || null;
   }
+
+  async updateCertificateImage(certificateId, certificateImgPath) {
+    const res = await db.query(
+      `
+    UPDATE certificates
+    SET certificates_img_path = $1
+    WHERE certificates_id = $2
+    RETURNING *
+    `,
+      [certificateImgPath, certificateId],
+    );
+
+    return res.rows[0] || null;
+  }
   async updateLabResult(resultId, data) {
     const res = await db.query(
       `

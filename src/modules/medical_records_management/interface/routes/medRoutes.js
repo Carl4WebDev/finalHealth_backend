@@ -67,6 +67,7 @@ import {
   createCertificateMaster,
   updateCertificateMaster,
   deleteCertificateMaster,
+  updateCertificateImage,
 
   // fees master
   getAllFees,
@@ -82,6 +83,16 @@ import {
 
 import { requireUser } from "../../../../core/middleware/requireUser.js";
 import authMiddleware from "../../../../core/middleware/Auth.js";
+
+import { uploadCertificate } from "../../../../core/middleware/uploadCertificate.js";
+
+router.patch(
+  "/certificates/:certificateId/image",
+  authMiddleware,
+  requireUser,
+  uploadCertificate.single("certificate_image"),
+  updateCertificateImage,
+);
 
 router.get(
   "/doctor/:doctorId/clinic/:clinicId/patients",
