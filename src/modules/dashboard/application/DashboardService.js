@@ -16,18 +16,21 @@ export default class DashboardService {
       subscription,
       networkClinics,
       networkDoctors,
+      analytics,
     ] = await Promise.all([
       this.dashboardRepo.getSummaryCards(userId),
       this.dashboardRepo.getUpcomingAppointments(userId),
       this.dashboardRepo.getSubscriptionOverview(userId),
       this.dashboardRepo.getClinicNetwork(userId),
       this.dashboardRepo.getDoctorNetwork(userId),
+      this.dashboardRepo.getPatientAnalytics(userId),
     ]);
 
     return {
       summaryCards,
       upcomingAppointments,
       subscription,
+      analytics,  
       network: {
         clinics: networkClinics,
         doctors: networkDoctors,
