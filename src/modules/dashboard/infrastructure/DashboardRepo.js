@@ -201,4 +201,103 @@ export default class DashboardRepo {
     const { rows } = await db.query(query, [userId]);
     return rows[0]?.total || 0;
   }
+
+async getPatientAnalytics(userId) {
+  // 1. Gender Distribution (Join with user_patients)
+  const genderQuery = `
+    SELECT p.gender, COUNT(*) as count 
+    FROM patients p
+    INNER JOIN user_patients up ON up.patient_id = p.patient_id
+    WHERE up.user_id = $1 
+    GROUP BY p.gender`;
+    
+  // 2. Visit Types (Join with user_patients)
+const visitTypeQuery = `
+  SELECT 
+    COUNT(DISTINCT CASE WHEN v_count = 1 THEN patient_id END) as new_p,
+    COUNT(DISTINCT CASE WHEN v_count > 1 THEN patient_id END) as ret_p
+  FROM (
+    SELECT a.patient_id, COUNT(*) as v_count 
+    FROM appointments a
+    INNER JOIN user_patients up ON up.patient_id = a.patient_id
+    WHERE up.user_id = $1 
+    AND LOWER(a.status) != 'cancelled' -- <--- ADD THIS LINE
+    GROUP BY a.patient_id
+  ) AS v_counts`;
+
+  // 3. No-Show Rate (Join with user_patients)
+const noShowQuery = `
+  SELECT 
+    COUNT(*) as total_appts, 
+    COUNT(CASE WHEN LOWER(status) = 'cancelled' THEN 1 END) as cancelled_appts
+  FROM appointments a
+  INNER JOIN user_patients up ON up.patient_id = a.patient_id
+  WHERE up.user_id = $1`;
+
+  // 4. Busiest Day (Join with user_patients)
+  const busiestDayQuery = `
+    SELECT TO_CHAR(a.appointment_date, 'Day') as day_name, COUNT(*) as count
+    FROM appointments a
+    INNER JOIN user_patients up ON up.patient_id = a.patient_id
+    WHERE up.user_id = $1
+    GROUP BY day_name ORDER BY count DESC LIMIT 1`;
+
+  // 5. Age Groups (Join with user_patients)
+  const ageGroupQuery = `
+    SELECT 
+      CASE 
+        WHEN age < 18 THEN '0-17'
+        WHEN age BETWEEN 18 AND 35 THEN '18-35'
+        WHEN age BETWEEN 36 AND 60 THEN '36-60'
+        ELSE '60+'
+      END as range, 
+      COUNT(*) as count
+    FROM (
+      SELECT EXTRACT(YEAR FROM AGE(p.date_of_birth))::int as age 
+      FROM patients p
+      INNER JOIN user_patients up ON up.patient_id = p.patient_id
+      WHERE up.user_id = $1 AND p.date_of_birth IS NOT NULL
+    ) AS ages 
+    GROUP BY range 
+    ORDER BY range`;
+
+  // 6. New Patients This Month (Join with user_patients)
+  const monthlyQuery = `
+    SELECT COUNT(*)::int as count 
+    FROM patients p
+    INNER JOIN user_patients up ON up.patient_id = p.patient_id
+    WHERE up.user_id = $1 
+    AND p.created_at >= DATE_TRUNC('month', CURRENT_DATE)`;
+
+  const [genders, visits, noShow, busy, ages, monthly] = await Promise.all([
+    db.query(genderQuery, [userId]),
+    db.query(visitTypeQuery, [userId]),
+    db.query(noShowQuery, [userId]),
+    db.query(busiestDayQuery, [userId]),
+    db.query(ageGroupQuery, [userId]),
+    db.query(monthlyQuery, [userId])
+  ]);
+
+  return {
+    gender_dist: {
+      male: Number(genders.rows.find(r => r.gender === 'Male')?.count || 0),
+      female: Number(genders.rows.find(r => r.gender === 'Female')?.count || 0),
+      other: Number(genders.rows.find(r => r.gender === 'Other')?.count || 0)
+    },
+    visit_types: {
+      new: Number(visits.rows[0]?.new_p || 0),
+      returning: Number(visits.rows[0]?.ret_p || 0)
+    },
+    noShowRate: noShow.rows[0].total_appts > 0 
+      ? Math.round((Number(noShow.rows[0].cancelled_appts) / Number(noShow.rows[0].total_appts)) * 100) 
+      : 0,
+    busiestDay: busy.rows[0]?.day_name?.trim() || "None",
+    ageDist: ages.rows.map(row => ({ 
+      name: String(row.range), 
+      value: Number(row.count) 
+    })),
+    total_patients: Number(visits.rows[0]?.new_p || 0) + Number(visits.rows[0]?.ret_p || 0),
+    new_this_month: Number(monthly.rows[0]?.count || 0)
+  };
+}
 }
