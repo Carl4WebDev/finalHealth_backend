@@ -272,10 +272,17 @@ export default class MedRepo {
 
   async findById(recordId) {
     const res = await db.query(
-      `SELECT record_id FROM medical_records WHERE record_id = $1`,
+      `
+    SELECT
+      record_id,
+      appointment_id
+    FROM medical_records
+    WHERE record_id = $1
+    `,
       [recordId],
     );
-    return res.rows[0];
+
+    return res.rows[0] || null;
   }
 
   // Diagnosis
@@ -977,12 +984,29 @@ ORDER BY a.appointment_date DESC, a.appointment_id DESC
       mr.clinic_id,
       mr.form_type,
       mr.pre_employment_data,
-      mr.created_at
+      mr.created_at,
+      a.status
     FROM medical_records mr
+    JOIN appointments a
+      ON a.appointment_id = mr.appointment_id
     WHERE mr.appointment_id = $1
     LIMIT 1
     `,
       [appointmentId],
+    );
+
+    return res.rows[0] || null;
+  }
+
+  async updateAppointmentStatus(appointmentId, status) {
+    const res = await db.query(
+      `
+    UPDATE appointments
+    SET status = $1
+    WHERE appointment_id = $2
+    RETURNING appointment_id, status
+    `,
+      [status, appointmentId],
     );
 
     return res.rows[0] || null;

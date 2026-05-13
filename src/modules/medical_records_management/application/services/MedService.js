@@ -468,7 +468,19 @@ export default class MedService {
       pre_employment_data: dto.pre_employment_data ?? null,
     };
 
-    return await this.medRepo.updateMedicalRecord(recordId, normalizedData);
+    const updatedRecord = await this.medRepo.updateMedicalRecord(
+      recordId,
+      normalizedData,
+    );
+
+    if (dto.status && existing.appointment_id) {
+      await this.medRepo.updateAppointmentStatus(
+        existing.appointment_id,
+        dto.status,
+      );
+    }
+
+    return updatedRecord;
   }
 
   async deleteMedicalRecord(recordId, actor) {
