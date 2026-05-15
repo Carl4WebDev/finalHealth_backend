@@ -97,8 +97,9 @@ export default class MedRepo {
       mr.doctor_id,
       mr.clinic_id,
       mr.form_type,
-      mr.pre_employment_data,
-      mr.created_at,
+mr.pre_employment_data,
+mr.form_data,
+mr.created_at,
       d.f_name || ' ' || d.l_name AS doctor_name,
       c.clinic_name
     FROM medical_records mr
@@ -157,6 +158,8 @@ export default class MedRepo {
       medicalRecord: {
         ...medicalRecord,
         pre_employment_data: medicalRecord.pre_employment_data || null,
+        form_data:
+          medicalRecord.form_data || medicalRecord.pre_employment_data || null,
       },
       vitalSigns: vitalSigns.rows,
       prescriptions: prescriptions.rows,
@@ -200,10 +203,11 @@ export default class MedRepo {
         total_amount,
         doctor_id,
         clinic_id,
-        form_type,
-        pre_employment_data
+form_type,
+pre_employment_data,
+form_data
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
       RETURNING
         record_id,
         appointment_id,
@@ -223,8 +227,9 @@ export default class MedRepo {
         doctor_id,
         clinic_id,
         form_type,
-        pre_employment_data,
-        created_at;
+pre_employment_data,
+form_data,
+created_at;
       `,
         [
           data.appointment_id,
@@ -245,6 +250,7 @@ export default class MedRepo {
           data.clinic_id,
           data.form_type || "general",
           data.pre_employment_data,
+          data.form_data,
         ],
       );
 
@@ -631,9 +637,10 @@ ORDER BY a.appointment_date DESC, a.appointment_id DESC
       total_amount = $12,
       doctor_id = $13,
       clinic_id = $14,
-      form_type = $15,
-      pre_employment_data = $16
-    WHERE record_id = $17
+form_type = $15,
+pre_employment_data = $16,
+form_data = $17
+WHERE record_id = $18
     RETURNING *
     `,
       [
@@ -653,6 +660,7 @@ ORDER BY a.appointment_date DESC, a.appointment_id DESC
         data.clinic_id,
         data.form_type,
         data.pre_employment_data,
+        data.form_data,
         recordId,
       ],
     );
@@ -1014,8 +1022,9 @@ ORDER BY a.appointment_date DESC, a.appointment_id DESC
       mr.doctor_id,
       mr.clinic_id,
       mr.form_type,
-      mr.pre_employment_data,
-      mr.created_at,
+mr.pre_employment_data,
+mr.form_data,
+mr.created_at,
       a.status
     FROM medical_records mr
     JOIN appointments a

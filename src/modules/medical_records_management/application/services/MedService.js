@@ -790,11 +790,44 @@ export default class MedService {
     }
 
     const normalizedData = {
-      patientId: Number(dto.patient_id ?? existing.patient_id),
-      testType: dto.test_type ?? existing.test_type,
-      result: dto.result ?? existing.result,
-      interpretation: dto.interpretation ?? existing.interpretation,
-      labImgPath: dto.lab_img_path ?? existing.lab_img_path ?? null,
+      patientId: Number(dto.patient_id ?? patientId),
+
+      appointment_id: dto.appointment_id ?? dto.appointmentId ?? null,
+      record_date:
+        dto.record_date ??
+        dto.recordDate ??
+        new Date().toISOString().split("T")[0],
+
+      diagnosis: dto.diagnosis ?? "",
+      treatment: dto.treatment ?? "",
+      medications: dto.medications ?? "",
+      assessment: dto.assessment ?? "",
+
+      is_contagious: dto.is_contagious ?? dto.isContagious ?? false,
+      contagious_description:
+        dto.contagious_description ?? dto.contagiousDescription ?? "",
+
+      doctor_id: dto.doctor_id ?? dto.doctorId ?? null,
+      clinic_id: dto.clinic_id ?? dto.clinicId ?? null,
+
+      form_type: dto.form_type ?? dto.formType ?? "general",
+
+      form_data:
+        dto.form_data ??
+        dto.formData ??
+        dto.pre_employment_data ??
+        dto.preEmploymentData ??
+        null,
+
+      pre_employment_data:
+        dto.pre_employment_data ?? dto.preEmploymentData ?? null,
+
+      consultation_fee: Number(
+        dto.consultation_fee ?? dto.consultationFee ?? 0,
+      ),
+      medicine_fee: Number(dto.medicine_fee ?? dto.medicineFee ?? 0),
+      lab_fee: Number(dto.lab_fee ?? dto.labFee ?? 0),
+      other_fee: Number(dto.other_fee ?? dto.otherFee ?? 0),
     };
 
     return await this.medRepo.updateLabResult(resultId, normalizedData);
