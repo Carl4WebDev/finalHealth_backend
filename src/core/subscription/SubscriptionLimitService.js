@@ -144,20 +144,20 @@ class SubscriptionLimitService {
     switch (planType) {
       case "free":
         return {
-          maxDoctors: 1,
-          maxClinics: 1,
+          maxDoctors: 3,
+          maxClinics: 3,
           maxUsers: 1,
           canCreateMedicalRecords: true,
-          maxMedicalRecordsPerPatient: 10,
+          maxMedicalRecordsPerPatient: 50,
         };
 
       case "monthly":
         return {
-          maxDoctors: 5,
-          maxClinics: 5,
+          maxDoctors: 10,
+          maxClinics: 10,
           maxUsers: 2,
           canCreateMedicalRecords: true,
-          maxMedicalRecordsPerPatient: 50,
+          maxMedicalRecordsPerPatient: 100,
         };
 
       case "yearly":
@@ -166,7 +166,7 @@ class SubscriptionLimitService {
           maxClinics: null,
           maxUsers: null,
           canCreateMedicalRecords: true,
-          maxMedicalRecordsPerPatient: 100,
+          maxMedicalRecordsPerPatient: null,
         };
 
       default:

@@ -1,4 +1,6 @@
 import express from "express";
+
+import { uploadPatientImage } from "../../../../core/middleware/uploadPatientImage.js";
 import {
   updatePatient,
   getPatientById,
@@ -6,6 +8,7 @@ import {
   getPatientOfDoctorInClinic,
   createPatient,
   // getInformationsOfPatient,
+  uploadPatientImage as uploadPatientImageController,
 } from "../controllers/PatientController.js";
 
 import authMiddleware from "../../../../core/middleware/Auth.js";
@@ -39,6 +42,14 @@ router.put(
   requireActiveSubscription,
   requireUser,
   updatePatient,
+);
+
+router.patch(
+  "/patients/:patientId/image",
+  authMiddleware,
+  requireUser,
+  uploadPatientImage.single("patient_image"),
+  uploadPatientImageController,
 );
 
 export default router;

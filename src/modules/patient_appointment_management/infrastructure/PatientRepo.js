@@ -79,46 +79,48 @@ export default class PatientRepo extends IPatientRepository {
   async getPatientOfDoctorInClinic(doctorId, clinicId) {
     const query = `
     SELECT
-  p.patient_id,
-  CONCAT(
-    p.f_name, ' ',
-    COALESCE(p.m_name || ' ', ''),
-    p.l_name
-  ) AS full_name,
+      p.patient_id,
+      CONCAT(
+        p.f_name, ' ',
+        COALESCE(p.m_name || ' ', ''),
+        p.l_name
+      ) AS full_name,
 
-  -- last visit is optional
-  TO_CHAR(MAX(a.created_at), 'Mon DD, YYYY') AS last_visit,
+      p.patient_img_path,
 
-  p.priority_id,
-  pq.priority_level
+      -- last visit is optional
+      TO_CHAR(MAX(a.created_at), 'Mon DD, YYYY') AS last_visit,
 
-FROM doctor_patient_clinic dpc
+      p.priority_id,
+      pq.priority_level
 
-JOIN patients p
-  ON p.patient_id = dpc.patient_id
+    FROM doctor_patient_clinic dpc
 
-LEFT JOIN appointments a
-  ON a.patient_id = p.patient_id
-  AND a.doctor_id = dpc.doctor_id
-  AND a.clinic_id = dpc.clinic_id
+    JOIN patients p
+      ON p.patient_id = dpc.patient_id
 
-LEFT JOIN priority_queue pq
-  ON pq.priority_id = p.priority_id
+    LEFT JOIN appointments a
+      ON a.patient_id = p.patient_id
+      AND a.doctor_id = dpc.doctor_id
+      AND a.clinic_id = dpc.clinic_id
 
-WHERE dpc.doctor_id = $1
-  AND dpc.clinic_id = $2
+    LEFT JOIN priority_queue pq
+      ON pq.priority_id = p.priority_id
 
-GROUP BY
-  p.patient_id,
-  p.f_name,
-  p.m_name,
-  p.l_name,
-  p.priority_id,
-  pq.priority_level
+    WHERE dpc.doctor_id = $1
+      AND dpc.clinic_id = $2
 
-ORDER BY
-  MAX(a.created_at) DESC NULLS LAST;
+    GROUP BY
+      p.patient_id,
+      p.f_name,
+      p.m_name,
+      p.l_name,
+      p.patient_img_path,
+      p.priority_id,
+      pq.priority_level
 
+    ORDER BY
+      MAX(a.created_at) DESC NULLS LAST;
   `;
 
     const result = await db.query(query, [doctorId, clinicId]);
@@ -213,6 +215,18 @@ ORDER BY
 
     const result = await trx.query(query, [...values, patientId]);
 
+    return result.rows[0];
+  }
+
+  async updatePatientImage(patientId, imagePath) {
+    const query = `
+    UPDATE patients
+    SET patient_img_path = $1
+    WHERE patient_id = $2
+    RETURNING *
+  `;
+
+    const result = await db.query(query, [imagePath, patientId]);
     return result.rows[0];
   }
 }

@@ -24,7 +24,7 @@ const factory = new AppointmentFactory();
 const patientService = new PatientManagementService(
   patientRepo,
   factory,
-  eventBus
+  eventBus,
 );
 
 // ============================================================
@@ -63,7 +63,7 @@ export const updatePatient = asyncHandler(async (req, res) => {
   const updatedPatient = await patientService.updatePatient(
     patientId,
     req.body,
-    req.user
+    req.user,
   );
 
   return sendSuccess(res, {
@@ -106,10 +106,34 @@ export const getPatientOfDoctorInClinic = asyncHandler(async (req, res) => {
 
   const patients = await patientService.getPatientOfDoctorInClinic(
     doctorId,
-    clinicId
+    clinicId,
   );
 
   return sendSuccess(res, {
     data: { patients },
   });
 });
+
+export const uploadPatientImage = async (req, res) => {
+  try {
+    const { patientId } = req.params;
+
+    const patient = await patientService.uploadPatientImage(
+      patientId,
+      req.file,
+    );
+
+    res.status(200).json({
+      ok: true,
+      message: "Patient image uploaded successfully",
+      data: {
+        patient,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({
+      ok: false,
+      message: error.message,
+    });
+  }
+};

@@ -23,6 +23,7 @@ const uploadDirs = [
   "src/core/uploads/prescriptions",
   "src/core/uploads/followup_notes",
   "src/core/uploads/medical_records",
+  "src/core/uploads/patients",
 ];
 
 uploadDirs.forEach((dir) => {

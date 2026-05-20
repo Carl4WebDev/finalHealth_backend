@@ -39,32 +39,32 @@ export default class MedRepo {
 
   async getPatientInfo(patientId) {
     const query = `
-      SELECT
-        p.patient_id,
-        CONCAT(p.f_name, ' ', p.m_name, ' ', p.l_name) AS full_name,
-        p.gender,
-        p.date_of_birth,
-        p.contact_number,
-        p.backup_contact,
-        p.email,
-        p.address,
-        p.priority_id,
-        pq.priority_level,
-        pq.description AS priority_description,
-        pq.priority_rank,
-        p.patient_type_id,
-        p.created_at
-      FROM patients p
-      LEFT JOIN priority_queue pq
-        ON pq.priority_id = p.priority_id
-      WHERE p.patient_id = $1
-      LIMIT 1;
-    `;
+    SELECT
+      p.patient_id,
+      CONCAT(p.f_name, ' ', p.m_name, ' ', p.l_name) AS full_name,
+      p.gender,
+      p.date_of_birth,
+      p.contact_number,
+      p.backup_contact,
+      p.email,
+      p.address,
+      p.priority_id,
+      pq.priority_level,
+      pq.description AS priority_description,
+      pq.priority_rank,
+      p.patient_type_id,
+      p.patient_img_path,
+      p.created_at
+    FROM patients p
+    LEFT JOIN priority_queue pq
+      ON pq.priority_id = p.priority_id
+    WHERE p.patient_id = $1
+    LIMIT 1;
+  `;
 
     const { rows } = await db.query(query, [patientId]);
     return rows[0];
   }
-
   async getPatientMedicalRecords(patientId) {
     // 1. Get the medical record (ROOT)
     const recordQuery = `

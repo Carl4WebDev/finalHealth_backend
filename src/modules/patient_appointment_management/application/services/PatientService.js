@@ -124,4 +124,25 @@ export default class PatientManagementService {
   async getPatientOfDoctorInClinic(doctorId, clinicId) {
     return this.patientRepo.getPatientOfDoctorInClinic(doctorId, clinicId);
   }
+
+  async uploadPatientImage(patientId, file) {
+    if (!file) {
+      throw new Error("Patient image is required");
+    }
+
+    const patient = await this.patientRepo.findById(patientId);
+
+    if (!patient) {
+      throw new Error("Patient not found");
+    }
+
+    const imagePath = `/uploads/patients/${file.filename}`;
+
+    const updatedPatient = await this.patientRepo.updatePatientImage(
+      patientId,
+      imagePath,
+    );
+
+    return updatedPatient;
+  }
 }
