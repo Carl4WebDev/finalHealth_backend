@@ -99,6 +99,10 @@ export default class MedRepo {
       mr.form_type,
 mr.pre_employment_data,
 mr.form_data,
+mr.payment_status,
+mr.payment_method,
+mr.payment_reference,
+mr.record_fees,
 mr.created_at,
       d.f_name || ' ' || d.l_name AS doctor_name,
       c.clinic_name
@@ -205,9 +209,10 @@ mr.created_at,
         clinic_id,
 form_type,
 pre_employment_data,
-form_data
+form_data,
+record_fees
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
       RETURNING
         record_id,
         appointment_id,
@@ -229,6 +234,7 @@ form_data
         form_type,
 pre_employment_data,
 form_data,
+record_fees,
 created_at;
       `,
         [
@@ -251,6 +257,7 @@ created_at;
           data.form_type || "general",
           data.pre_employment_data,
           data.form_data,
+          data.record_fees ? JSON.stringify(data.record_fees) : null,
         ],
       );
 
@@ -637,10 +644,14 @@ ORDER BY a.appointment_date DESC, a.appointment_id DESC
       total_amount = $12,
       doctor_id = $13,
       clinic_id = $14,
-form_type = $15,
-pre_employment_data = $16,
-form_data = $17
-WHERE record_id = $18
+form_type = COALESCE($15, form_type),
+pre_employment_data = COALESCE($16, pre_employment_data),
+form_data = COALESCE($17, form_data),
+payment_status = COALESCE($18, payment_status),
+payment_method = COALESCE($19, payment_method),
+payment_reference = COALESCE($20, payment_reference),
+record_fees = COALESCE($21, record_fees)
+WHERE record_id = $22
     RETURNING *
     `,
       [
@@ -661,6 +672,10 @@ WHERE record_id = $18
         data.form_type,
         data.pre_employment_data,
         data.form_data,
+        data.payment_status,
+        data.payment_method,
+        data.payment_reference,
+        data.record_fees ? JSON.stringify(data.record_fees) : null,
         recordId,
       ],
     );
@@ -1024,6 +1039,10 @@ WHERE record_id = $18
       mr.form_type,
 mr.pre_employment_data,
 mr.form_data,
+mr.payment_status,
+mr.payment_method,
+mr.payment_reference,
+mr.record_fees,
 mr.created_at,
       a.status
     FROM medical_records mr

@@ -444,6 +444,11 @@ export default class MedService {
       clinic_id: dto.clinic_id,
       form_type: dto.form_type ?? "general",
       pre_employment_data: dto.pre_employment_data ?? null,
+      form_data: dto.form_data ?? null,
+      payment_status: dto.payment_status ?? null,
+      payment_method: dto.payment_method ?? null,
+      payment_reference: dto.payment_reference ?? null,
+      record_fees: dto.record_fees ?? null,
     };
 
     const updatedRecord = await this.medRepo.updateMedicalRecord(
