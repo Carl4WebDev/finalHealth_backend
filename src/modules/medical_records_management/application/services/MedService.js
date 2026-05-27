@@ -449,6 +449,7 @@ export default class MedService {
       payment_method: dto.payment_method ?? null,
       payment_reference: dto.payment_reference ?? null,
       record_fees: dto.record_fees ?? null,
+      follow_up_date: dto.follow_up_date ?? null,
     };
 
     const updatedRecord = await this.medRepo.updateMedicalRecord(

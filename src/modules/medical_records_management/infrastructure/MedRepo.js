@@ -103,6 +103,7 @@ mr.payment_status,
 mr.payment_method,
 mr.payment_reference,
 mr.record_fees,
+mr.follow_up_date,
 mr.created_at,
       d.f_name || ' ' || d.l_name AS doctor_name,
       c.clinic_name
@@ -650,8 +651,9 @@ form_data = COALESCE($17, form_data),
 payment_status = COALESCE($18, payment_status),
 payment_method = COALESCE($19, payment_method),
 payment_reference = COALESCE($20, payment_reference),
-record_fees = COALESCE($21, record_fees)
-WHERE record_id = $22
+record_fees = COALESCE($21, record_fees),
+follow_up_date = $22
+WHERE record_id = $23
     RETURNING *
     `,
       [
@@ -676,6 +678,7 @@ WHERE record_id = $22
         data.payment_method,
         data.payment_reference,
         data.record_fees ? JSON.stringify(data.record_fees) : null,
+        data.follow_up_date || null,
         recordId,
       ],
     );
@@ -695,6 +698,7 @@ WHERE record_id = $22
 
     return res.rows[0] || null;
   }
+
 
   // prescriptions
   async getAllPrescriptionsByRecord(recordId) {
@@ -1043,6 +1047,7 @@ mr.payment_status,
 mr.payment_method,
 mr.payment_reference,
 mr.record_fees,
+mr.follow_up_date,
 mr.created_at,
       a.status
     FROM medical_records mr
