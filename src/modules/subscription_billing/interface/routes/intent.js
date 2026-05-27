@@ -161,4 +161,76 @@ router.post("/payments/activate", authMiddleware, async (req, res) => {
   }
 });
 
+router.post("/payments/cancel", authMiddleware, async (req, res) => {
+  const client = await db.getClient();
+
+  try {
+    const userId = req.user.id;
+
+    await client.query("BEGIN");
+
+    // 1️⃣ Cancel current active subscription
+    await client.query(
+      `
+      UPDATE user_subscription
+      SET status = 'cancelled', auto_renew = false
+      WHERE user_id = $1 AND status = 'active'
+      `,
+      [userId],
+    );
+
+    // 2️⃣ Get the free plan
+    const freePlanRes = await client.query(
+      `
+      SELECT plan_id
+      FROM subscription_plan
+      WHERE plan_type = 'free' AND isactive = true
+      LIMIT 1
+      `,
+    );
+
+    if (!freePlanRes.rows[0]) {
+      await client.query("ROLLBACK");
+      return res.status(500).json({
+        status: "error",
+        message: "Free plan not found in system",
+      });
+    }
+
+    const freePlanId = freePlanRes.rows[0].plan_id;
+
+    // 3️⃣ Auto-downgrade to free plan (lifetime, no expiration)
+    const subResult = await client.query(
+      `
+      INSERT INTO user_subscription
+        (user_id, plan_id, start_date, end_date, auto_renew, status, renewal_date)
+      VALUES
+        ($1, $2, CURRENT_DATE, '2099-12-31', false, 'active', NULL)
+      RETURNING *
+      `,
+      [userId, freePlanId],
+    );
+
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      status: "success",
+      message: "Subscription cancelled. Downgraded to free plan.",
+      data: {
+        subscription: subResult.rows[0],
+      },
+    });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Cancel subscription error:", err);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to cancel subscription",
+    });
+  } finally {
+    client.release();
+  }
+});
+
 export default router;
