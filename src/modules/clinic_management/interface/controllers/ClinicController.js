@@ -166,10 +166,12 @@ export const createAffiliationDoctorToClinic = asyncHandler(
   async (req, res) => {
     const doctorId = req.params.doctorId;
     const clinicId = req.params.clinicId;
+    const { affiliation_code } = req.body;
 
     const affiliated = await clinicService.createAffiliationDoctorToClinic(
       doctorId,
       clinicId,
+      affiliation_code,
     );
 
     return sendSuccess(res, {

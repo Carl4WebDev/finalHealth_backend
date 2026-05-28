@@ -146,10 +146,11 @@ export default class ClinicManagementService {
     return await this.clinicRepo.getClinicSessions(clinicId);
   }
 
-  async createAffiliationDoctorToClinic(doctorId, clinicId) {
+  async createAffiliationDoctorToClinic(doctorId, clinicId, affiliationCode) {
     return await this.clinicRepo.createAffiliationDoctorToClinic(
       doctorId,
       clinicId,
+      affiliationCode,
     );
   }
   async createClinicSession(clinicId, clinicSessionData) {

@@ -23,7 +23,7 @@ export default class ClinicRepo extends IClinicRepository {
   ============================ */
   async save(clinic, userId) {
     const query = `
-      INSERT INTO clinics 
+      INSERT INTO clinics
       (clinic_name, address, contact_num, backup_num, open_hours, open_days,
        business_permit_no, owner_name, profile_image_path, is_verified, verification_status, user_id)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
@@ -170,15 +170,14 @@ export default class ClinicRepo extends IClinicRepository {
 SELECT
   c.*,
   dc.doctor_id,
-  dc.clinic_id AS linked_clinic_id
+  dc.clinic_id AS linked_clinic_id,
+  dc.affiliation_code
 FROM clinics c
 JOIN doctor_clinics dc ON c.clinic_id = dc.clinic_id
 WHERE dc.doctor_id = $1
   AND c.user_id = $2
   AND c.is_verified = TRUE
   AND c.verification_status = 'Approved';
-
-
   `;
 
     const result = await db.query(query, [doctorId, userId]);
@@ -243,18 +242,17 @@ WHERE dc.doctor_id = $1
     return result.rows;
   }
 
-  async createAffiliationDoctorToClinic(doctorId, clinicId) {
+  async createAffiliationDoctorToClinic(doctorId, clinicId, affiliationCode) {
     const query = `
-      INSERT INTO doctor_clinics (doctor_id, clinic_id)
-      VALUES ($1, $2)
+      INSERT INTO doctor_clinics (doctor_id, clinic_id, affiliation_code)
+      VALUES ($1, $2, $3)
       ON CONFLICT (doctor_id, clinic_id)
       DO NOTHING
-      RETURNING doctor_id, clinic_id;
+      RETURNING doctor_id, clinic_id, affiliation_code;
     `;
 
-    const { rows } = await db.query(query, [doctorId, clinicId]);
+    const { rows } = await db.query(query, [doctorId, clinicId, affiliationCode || null]);
 
-    // If rows.length === 0, affiliation already exists
     return rows[0] || null;
   }
 
